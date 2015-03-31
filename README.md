@@ -1,3 +1,3 @@
-A deque implemented as a hybrid linked-list-of-arrays.
+A map backed by a vector
 
-Documentation is available at https://contain-rs.github.io/blist/blist.
+Documentation is available at https://contain-rs.github.io/linear-map/linear-map.
