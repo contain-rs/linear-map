@@ -5,7 +5,7 @@ version = "0.0.1"
 license = "MIT/Apache-2.0"
 description = "A map backed by a vector"
 authors = [
-    "Alexis Beingessner <a.beingessner@gmail.com>",
+    "Tobias Bucher <tobiasbucher5991@gmail.com>",
 ]
 
 repository = "https://github.com/contain-rs/linear-map"
