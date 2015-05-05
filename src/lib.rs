@@ -7,6 +7,8 @@ use std::iter::Map;
 use std::mem;
 use std::slice;
 
+use self::Entry::{Occupied, Vacant};
+
 // TODO: Unzip the vectors?
 // Consideration: When unzipped, the compiler will not be able to understand
 // that both of the `Vec`s have the same length, thus stuff like `iter` and so
@@ -218,6 +220,107 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
         }
         None
     }
+
+    /// Gets the given key's corresponding entry in the map for in-place manipulation.
+    pub fn entry(&mut self, key: K) -> Entry<K, V> {
+        for i in 0..self.storage.len() {
+            let found;
+            {
+                let (ref k, _) = self.storage[i];
+                found = key == *k;
+            }
+            if found {
+                return Occupied(OccupiedEntry {
+                    map: self,
+                    index: i
+                });
+            }
+        }
+        Vacant(VacantEntry {
+            map: self,
+            key: key
+        })
+    }
+}
+
+/// A view into a single occupied location in a LinearMap.
+pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
+    map: &'a mut LinearMap<K, V>,
+    index: usize
+}
+
+/// A view into a single empty location in a LinearMap.
+pub struct VacantEntry<'a, K: 'a, V: 'a> {
+    map: &'a mut LinearMap<K, V>,
+    key: K
+}
+
+/// A view into a single location in a map, which may be vacant or occupied.
+pub enum Entry<'a, K: 'a, V: 'a> {
+    /// An occupied Entry.
+    Occupied(OccupiedEntry<'a, K, V>),
+
+    /// A vacant Entry.
+    Vacant(VacantEntry<'a, K, V>)
+}
+
+impl<'a, K, V> Entry<'a, K, V> {
+    /// Ensures a value is in the entry by inserting the default if empty, and returns
+    /// a mutable reference to the value in the entry.
+    pub fn or_insert(self, default: V) -> &'a mut V {
+        match self {
+            Occupied(entry) => entry.into_mut(),
+            Vacant(entry) => entry.insert(default)
+        }
+    }
+
+    /// Ensures a value is in the entry by inserting the result of the default function if empty,
+    /// and returns a mutable reference to the value in the entry.
+    pub fn or_insert_with<F: FnOnce() -> V>(self, default: F) -> &'a mut V {
+        match self {
+            Occupied(entry) => entry.into_mut(),
+            Vacant(entry) => entry.insert(default())
+        }
+    }
+}
+
+impl<'a, K, V> OccupiedEntry<'a, K, V> {
+    /// Gets a reference to the value in the entry.
+    pub fn get(&self) -> &V {
+        &self.map.storage[self.index].1
+    }
+
+    /// Gets a mutable reference to the value in the entry.
+    pub fn get_mut(&mut self) -> &mut V {
+        &mut self.map.storage[self.index].1
+    }
+
+    /// Converts the OccupiedEntry into a mutable reference to the value in the entry
+    /// with a lifetime bound to the map itself
+    pub fn into_mut(self) -> &'a mut V {
+        &mut self.map.storage[self.index].1
+    }
+
+    /// Sets the value of the entry, and returns the entry's old value
+    pub fn insert(&mut self, mut value: V) -> V {
+        let old_value = self.get_mut();
+        mem::swap(&mut value, old_value);
+        value
+    }
+
+    /// Takes the value out of the entry, and returns it
+    pub fn remove(self) -> V {
+        self.map.storage.swap_remove(self.index).1
+    }
+}
+
+impl<'a, K, V> VacantEntry<'a, K, V> {
+    /// Sets the value of the entry with the VacantEntry's key,
+    /// and returns a mutable reference to it
+    pub fn insert(self, value: V) -> &'a mut V {
+        self.map.storage.push((self.key, value));
+        &mut self.map.storage.last_mut().unwrap().1
+    }
 }
 
 /// The iterator returned by `LinearMap::iter`.
@@ -300,8 +403,12 @@ impl<'a, K:'a, V:'a> ExactSizeIterator for Values <'a, K, V> { }
 #[cfg(test)]
 mod test {
     use super::LinearMap;
+    use super::Entry::{Occupied, Vacant};
 
     extern crate test;
+    extern crate rand;
+
+    use self::rand::{thread_rng, Rng};
 
     const TEST_CAPACITY: usize = 10;
 
@@ -468,6 +575,96 @@ mod test {
         assert_eq!(map.remove(&100), Some(102));
         assert_eq!(map.remove(&100), None);
         assert_eq!(map.remove(&1000), None);
+    }
+
+    #[test]
+    fn test_entry() {
+        let xs = [(1, 10), (2, 20), (3, 30), (4, 40), (5, 50), (6, 60)];
+
+        let mut map = LinearMap::new();
+        
+        for &(k, v) in &xs {
+            map.insert(k, v);
+        }
+
+        // Existing key (insert)
+        match map.entry(1) {
+            Vacant(_) => unreachable!(),
+            Occupied(mut view) => {
+                assert_eq!(view.get(), &10);
+                assert_eq!(view.insert(100), 10);
+            }
+        }
+        assert_eq!(map.get(&1).unwrap(), &100);
+        assert_eq!(map.len(), 6);
+
+
+        // Existing key (update)
+        match map.entry(2) {
+            Vacant(_) => unreachable!(),
+            Occupied(mut view) => {
+                let v = view.get_mut();
+                let new_v = (*v) * 10;
+                *v = new_v;
+            }
+        }
+        assert_eq!(map.get(&2).unwrap(), &200);
+        assert_eq!(map.len(), 6);
+
+        // Existing key (take)
+        match map.entry(3) {
+            Vacant(_) => unreachable!(),
+            Occupied(view) => {
+                assert_eq!(view.remove(), 30);
+            }
+        }
+        assert_eq!(map.get(&3), None);
+        assert_eq!(map.len(), 5);
+
+
+        // Inexistent key (insert)
+        match map.entry(10) {
+            Occupied(_) => unreachable!(),
+            Vacant(view) => {
+                assert_eq!(*view.insert(1000), 1000);
+            }
+        }
+        assert_eq!(map.get(&10).unwrap(), &1000);
+        assert_eq!(map.len(), 6);
+    }
+
+    #[test]
+    fn test_entry_take_doesnt_corrupt() {
+        #![allow(deprecated)] //rand
+        // Test for #19292
+        fn check(m: &LinearMap<isize, ()>) {
+            for k in m.keys() {
+                assert!(m.contains_key(k),
+                        "{} is in keys() but not in the map?", k);
+            }
+        }
+
+        let mut m = LinearMap::new();
+        let mut rng = thread_rng();
+
+        // Populate the map with some items.
+        for _ in 0..50 {
+            let x = rng.gen_range(-10, 10);
+            m.insert(x, ());
+        }
+
+        for i in 0..1000 {
+            let x = rng.gen_range(-10, 10);
+            match m.entry(x) {
+                Vacant(_) => {},
+                Occupied(e) => {
+                    println!("{}: remove {}", i, x);
+                    e.remove();
+                },
+            }
+
+            check(&m);
+        }
     }
 }
 
