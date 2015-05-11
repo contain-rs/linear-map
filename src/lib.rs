@@ -223,23 +223,16 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
 
     /// Gets the given key's corresponding entry in the map for in-place manipulation.
     pub fn entry(&mut self, key: K) -> Entry<K, V> {
-        for i in 0..self.storage.len() {
-            let found;
-            {
-                let (ref k, _) = self.storage[i];
-                found = key == *k;
-            }
-            if found {
-                return Occupied(OccupiedEntry {
-                    map: self,
-                    index: i
-                });
-            }
+        match self.storage.iter().position(|&(ref k, _)| key == *k) {
+            None => Vacant(VacantEntry {
+                map: self,
+                key: key
+            }),
+            Some(index) => Occupied(OccupiedEntry {
+                map: self,
+                index: index
+            })
         }
-        Vacant(VacantEntry {
-            map: self,
-            key: key
-        })
     }
 }
 
@@ -406,9 +399,6 @@ mod test {
     use super::Entry::{Occupied, Vacant};
 
     extern crate test;
-    extern crate rand;
-
-    use self::rand::{thread_rng, Rng};
 
     const TEST_CAPACITY: usize = 10;
 
@@ -631,40 +621,6 @@ mod test {
         }
         assert_eq!(map.get(&10).unwrap(), &1000);
         assert_eq!(map.len(), 6);
-    }
-
-    #[test]
-    fn test_entry_take_doesnt_corrupt() {
-        #![allow(deprecated)] //rand
-        // Test for #19292
-        fn check(m: &LinearMap<isize, ()>) {
-            for k in m.keys() {
-                assert!(m.contains_key(k),
-                        "{} is in keys() but not in the map?", k);
-            }
-        }
-
-        let mut m = LinearMap::new();
-        let mut rng = thread_rng();
-
-        // Populate the map with some items.
-        for _ in 0..50 {
-            let x = rng.gen_range(-10, 10);
-            m.insert(x, ());
-        }
-
-        for i in 0..1000 {
-            let x = rng.gen_range(-10, 10);
-            match m.entry(x) {
-                Vacant(_) => {},
-                Occupied(e) => {
-                    println!("{}: remove {}", i, x);
-                    e.remove();
-                },
-            }
-
-            check(&m);
-        }
     }
 }
 
