@@ -42,8 +42,10 @@
 
     <section id='main' class="content mod">
 <h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>linear_map</a></span><span class='out-of-band'><span id='render-detail'>
-            <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-0' class='srclink' href='../src/linear_map/lib.rs.html#1-560'>[src]</a></span></h1>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-0' class='srclink' href='../src/linear_map/lib.rs.html#1-713' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>A module providing a map implementation <code>LinearMap</code> backed by a vector.</p>
 </div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
@@ -84,10 +86,38 @@
                     </tr>
                 
                     <tr class=' module-item'>
+                        <td><a class='struct' href='struct.OccupiedEntry.html'
+                               title='linear_map::OccupiedEntry'>OccupiedEntry</a></td>
+                        <td class='docblock short'>
+                             <p>A view into a single occupied location in a LinearMap.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.VacantEntry.html'
+                               title='linear_map::VacantEntry'>VacantEntry</a></td>
+                        <td class='docblock short'>
+                             <p>A view into a single empty location in a LinearMap.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
                         <td><a class='struct' href='struct.Values.html'
                                title='linear_map::Values'>Values</a></td>
                         <td class='docblock short'>
                              <p>The iterator returned by <code>LinearMap::values</code>.</p>
+
+                        </td>
+                    </tr>
+                </table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='enum' href='enum.Entry.html'
+                               title='linear_map::Entry'>Entry</a></td>
+                        <td class='docblock short'>
+                             <p>A view into a single location in a map, which may be vacant or occupied.</p>
 
                         </td>
                     </tr>
@@ -123,6 +153,10 @@
                 <code>struct</code>, <code>enum</code>,
                 <code>trait</code>, <code>typedef</code> (or
                 <code>tdef</code>).
+            </p>
+            <p>
+                Search functions by type signature (e.g.
+                <code>vec -> usize</code>)
             </p>
         </div>
     </div>
