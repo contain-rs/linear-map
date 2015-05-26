@@ -2,12 +2,11 @@
 
 #![warn(missing_docs)]
 #![cfg_attr(test, feature(test))]
-#![feature(into_cow)]
 
 use std::iter::Map;
 use std::mem;
 use std::slice;
-use std::borrow::{Cow, IntoCow, ToOwned, Borrow};
+use std::borrow::{Cow, ToOwned, Borrow};
 
 use self::Entry::{Occupied, Vacant};
 
@@ -224,12 +223,29 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
     }
 
     /// Gets the given key's corresponding entry in the map for in-place manipulation.
-    pub fn entry<'a, 'q, C, Q: ?Sized + 'q>(&'a mut self, key: C) -> Entry<'a, 'q, Q, K, V>
-        where C: IntoCow<'q, Q>,
-              Q: ToOwned<Owned = K> + Eq,
+    pub fn entry(&mut self, key: K) -> Entry<K, K, V>
+        where K: Borrow<K>,
+              K: ToOwned<Owned=K>,
+    {
+        let moo = Cow::Owned(key);
+        match self.storage.iter().position(|&(ref k, _)| *moo == *k.borrow()) {
+            None => Vacant(VacantEntry {
+                map: self,
+                key: moo,
+            }),
+            Some(index) => Occupied(OccupiedEntry {
+                map: self,
+                index: index
+            })
+        }
+    }
+
+    /// Gets the given key's corresponding entry in the map for in-place manipulation.
+    pub fn entry_lazy<'a, 'q, Q: ?Sized + 'q>(&'a mut self, key: &'q Q) -> Entry<'a, 'q, Q, K, V>
+        where Q: ToOwned<Owned = K> + Eq,
               K: Borrow<Q> + 'q,
     {
-        let moo = key.into_cow();
+        let moo = Cow::Borrowed(key);
         match self.storage.iter().position(|&(ref k, _)| *moo == *k.borrow()) {
             None => Vacant(VacantEntry {
                 map: self,
@@ -414,7 +430,6 @@ impl<'a, K:'a, V:'a> ExactSizeIterator for Values <'a, K, V> { }
 mod test {
     use super::LinearMap;
     use super::Entry::{Occupied, Vacant};
-    use std::borrow::IntoCow;
 
     extern crate test;
 
@@ -644,18 +659,18 @@ mod test {
     #[test]
     fn entry_v4() {
         let mut map = LinearMap::new();
-        let key1 = String::from_str("hello");
-        let key2 = String::from_str("goodbye");
-        *map.entry(&key1).or_insert(0) += 1;
-        *map.entry(&key2).or_insert(0) += 1;
+        let key1 = "hello".to_string();
+        let key2 = "goodbye".to_string();
+        *map.entry_lazy(&key1).or_insert(0) += 1;
+        *map.entry_lazy(&key2).or_insert(0) += 1;
         *map.entry(key1.clone()).or_insert(0) += 1;
         *map.entry(key2).or_insert(0) += 1;
-        *map.entry(&*key1).or_insert(0) += 1;
+        *map.entry_lazy(&*key1).or_insert(0) += 1;
         *map.entry(key1).or_insert(0) += 1;
 
         // LinearMap doesn't support indexing or Borrow lookup yet :/
-        assert_eq!(map.get(&String::from_str("hello")).unwrap(), &4);
-        assert_eq!(map.get(&String::from_str("goodbye")).unwrap(), &2);
+        assert_eq!(map.get(&"hello".to_string()).unwrap(), &4);
+        assert_eq!(map.get(&"goodbye".to_string()).unwrap(), &2);
 
     }
 }
