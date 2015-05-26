@@ -2,10 +2,12 @@
 
 #![warn(missing_docs)]
 #![cfg_attr(test, feature(test))]
+#![feature(into_cow)]
 
 use std::iter::Map;
 use std::mem;
 use std::slice;
+use std::borrow::{Cow, IntoCow, ToOwned, Borrow};
 
 use self::Entry::{Occupied, Vacant};
 
@@ -222,11 +224,16 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
     }
 
     /// Gets the given key's corresponding entry in the map for in-place manipulation.
-    pub fn entry(&mut self, key: K) -> Entry<K, V> {
-        match self.storage.iter().position(|&(ref k, _)| key == *k) {
+    pub fn entry<'a, 'q, C, Q: ?Sized + 'q>(&'a mut self, key: C) -> Entry<'a, 'q, Q, K, V>
+        where C: IntoCow<'q, Q>,
+              Q: ToOwned<Owned = K> + Eq,
+              K: Borrow<Q> + 'q,
+    {
+        let moo = key.into_cow();
+        match self.storage.iter().position(|&(ref k, _)| *moo == *k.borrow()) {
             None => Vacant(VacantEntry {
                 map: self,
-                key: key
+                key: moo,
             }),
             Some(index) => Occupied(OccupiedEntry {
                 map: self,
@@ -243,21 +250,29 @@ pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
 }
 
 /// A view into a single empty location in a LinearMap.
-pub struct VacantEntry<'a, K: 'a, V: 'a> {
+pub struct VacantEntry<'a, 'q,
+        Q: ToOwned + ?Sized + 'q,
+        K: 'a + 'q,
+        V: 'a> {
     map: &'a mut LinearMap<K, V>,
-    key: K
+    key: Cow<'q, Q>
 }
 
 /// A view into a single location in a map, which may be vacant or occupied.
-pub enum Entry<'a, K: 'a, V: 'a> {
+pub enum Entry<'a, 'q,
+    Q: ToOwned + ?Sized + 'q,
+    K: 'a + 'q,
+    V: 'a> {
     /// An occupied Entry.
     Occupied(OccupiedEntry<'a, K, V>),
 
     /// A vacant Entry.
-    Vacant(VacantEntry<'a, K, V>)
+    Vacant(VacantEntry<'a, 'q, Q, K, V>)
 }
 
-impl<'a, K, V> Entry<'a, K, V> {
+impl<'a, 'q, Q: ?Sized, K: 'a + 'q, V> Entry<'a, 'q, Q, K, V>
+    where Q: ToOwned<Owned = K>,
+{
     /// Ensures a value is in the entry by inserting the default if empty, and returns
     /// a mutable reference to the value in the entry.
     pub fn or_insert(self, default: V) -> &'a mut V {
@@ -307,11 +322,13 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     }
 }
 
-impl<'a, K, V> VacantEntry<'a, K, V> {
+impl<'a, 'q, Q: ?Sized, K: 'a + 'q, V> VacantEntry<'a, 'q, Q, K, V>
+    where Q: ToOwned<Owned = K>,
+{
     /// Sets the value of the entry with the VacantEntry's key,
     /// and returns a mutable reference to it
     pub fn insert(self, value: V) -> &'a mut V {
-        self.map.storage.push((self.key, value));
+        self.map.storage.push((self.key.into_owned(), value));
         &mut self.map.storage.last_mut().unwrap().1
     }
 }
@@ -572,7 +589,7 @@ mod test {
         let xs = [(1, 10), (2, 20), (3, 30), (4, 40), (5, 50), (6, 60)];
 
         let mut map = LinearMap::new();
-        
+
         for &(k, v) in &xs {
             map.insert(k, v);
         }
