@@ -224,8 +224,7 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
 
     /// Gets the given key's corresponding entry in the map for in-place manipulation.
     pub fn entry(&mut self, key: K) -> Entry<K, K, V>
-        where K: Borrow<K>,
-              K: ToOwned<Owned=K>,
+        where K: Clone
     {
         self.entry_inner(Cow::Owned(key))
     }
