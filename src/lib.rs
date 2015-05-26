@@ -227,17 +227,7 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
         where K: Borrow<K>,
               K: ToOwned<Owned=K>,
     {
-        let moo = Cow::Owned(key);
-        match self.storage.iter().position(|&(ref k, _)| *moo == *k.borrow()) {
-            None => Vacant(VacantEntry {
-                map: self,
-                key: moo,
-            }),
-            Some(index) => Occupied(OccupiedEntry {
-                map: self,
-                index: index
-            })
-        }
+        self.entry_inner(Cow::Owned(key))
     }
 
     /// Gets the given key's corresponding entry in the map for in-place manipulation.
@@ -245,7 +235,13 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
         where Q: ToOwned<Owned = K> + Eq,
               K: Borrow<Q> + 'q,
     {
-        let moo = Cow::Borrowed(key);
+        self.entry_inner(Cow::Borrowed(key))
+    }
+
+    fn entry_inner<'a, 'q, Q: ?Sized + 'q>(&'a mut self, moo: Cow<'q, Q>) -> Entry<'a, 'q, Q, K, V>
+        where Q: ToOwned<Owned = K> + Eq,
+              K: Borrow<Q> + 'q,
+    {
         match self.storage.iter().position(|&(ref k, _)| *moo == *k.borrow()) {
             None => Vacant(VacantEntry {
                 map: self,
