@@ -414,6 +414,7 @@ impl<'a, K:'a, V:'a> ExactSizeIterator for Values <'a, K, V> { }
 mod test {
     use super::LinearMap;
     use super::Entry::{Occupied, Vacant};
+    use std::borrow::IntoCow;
 
     extern crate test;
 
@@ -638,6 +639,24 @@ mod test {
         }
         assert_eq!(map.get(&10).unwrap(), &1000);
         assert_eq!(map.len(), 6);
+    }
+
+    #[test]
+    fn entry_v4() {
+        let mut map = LinearMap::new();
+        let key1 = String::from_str("hello");
+        let key2 = String::from_str("goodbye");
+        *map.entry(&key1).or_insert(0) += 1;
+        *map.entry(&key2).or_insert(0) += 1;
+        *map.entry(key1.clone()).or_insert(0) += 1;
+        *map.entry(key2).or_insert(0) += 1;
+        *map.entry(&*key1).or_insert(0) += 1;
+        *map.entry(key1).or_insert(0) += 1;
+
+        // LinearMap doesn't support indexing or Borrow lookup yet :/
+        assert_eq!(map.get(&String::from_str("hello")).unwrap(), &4);
+        assert_eq!(map.get(&String::from_str("goodbye")).unwrap(), &2);
+
     }
 }
 
