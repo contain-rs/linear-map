@@ -1,7 +1,7 @@
 //! A module providing a map implementation `LinearMap` backed by a vector.
 
 #![warn(missing_docs)]
-#![cfg_attr(test, feature(test))]
+#![cfg_attr(all(test, feature = "nightly"), feature(test))]
 
 use std::iter::Map;
 use std::mem;
@@ -398,8 +398,6 @@ mod test {
     use super::LinearMap;
     use super::Entry::{Occupied, Vacant};
 
-    extern crate test;
-
     const TEST_CAPACITY: usize = 10;
 
     #[test]
@@ -572,7 +570,7 @@ mod test {
         let xs = [(1, 10), (2, 20), (3, 30), (4, 40), (5, 50), (6, 60)];
 
         let mut map = LinearMap::new();
-        
+
         for &(k, v) in &xs {
             map.insert(k, v);
         }
@@ -624,7 +622,7 @@ mod test {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "nightly"))]
 mod bench {
     use super::LinearMap;
 
