@@ -12,3 +12,6 @@ repository = "https://github.com/contain-rs/linear-map"
 documentation = "https://contain-rs.github.io/linear-map/linear_map"
 keywords = ["data-structures"]
 readme = "README.md"
+
+[features]
+nightly = []
