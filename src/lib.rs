@@ -5,6 +5,7 @@
 
 use std::borrow::Borrow;
 #[cfg(feature = "nightly")] use std::fmt::{self, Debug};
+use std::hash::{self, Hash};
 use std::iter::{self, Map};
 use std::mem;
 use std::ops;
@@ -257,6 +258,12 @@ impl<K, V> iter::FromIterator<(K, V)> for LinearMap<K, V> where K: Eq {
         let mut map = Self::new();
         map.extend(key_values);
         map
+    }
+}
+
+impl<K, V> Hash for LinearMap<K, V> where K: Eq + Hash, V: Hash {
+    fn hash<H: hash::Hasher>(&self, h: &mut H) {
+        for e in self { e.hash(h); }
     }
 }
 
