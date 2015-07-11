@@ -2,8 +2,10 @@
 
 #![warn(missing_docs)]
 #![cfg_attr(all(test, feature = "nightly"), feature(test))]
+#![cfg_attr(feature = "nightly", feature(iter_order))]
 
 use std::borrow::Borrow;
+#[cfg(feature = "nightly")] use std::cmp::Ordering;
 #[cfg(feature = "nightly")] use std::fmt::{self, Debug};
 use std::hash::{self, Hash};
 use std::iter::{self, Map};
@@ -270,6 +272,26 @@ impl<K, V> Hash for LinearMap<K, V> where K: Eq + Hash, V: Hash {
 impl<'a, K, V, Q: ?Sized> ops::Index<&'a Q> for LinearMap<K, V> where K: Eq + Borrow<Q>, Q: Eq {
     type Output = V;
     fn index(&self, key: &'a Q) -> &V { self.get(key).expect("key not found") }
+}
+
+#[cfg(feature = "nightly")]
+impl<K, V> PartialEq for LinearMap<K, V> where K: Eq, V: PartialEq {
+    fn eq(&self, other: &Self) -> bool { iter::order::eq(self.iter(), other.iter()) }
+}
+
+#[cfg(feature = "nightly")]
+impl<K, V> Eq for LinearMap<K, V> where K: Eq, V: Eq {}
+
+#[cfg(feature = "nightly")]
+impl<K, V> PartialOrd for LinearMap<K, V> where K: Eq + PartialOrd, V: PartialOrd {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        iter::order::partial_cmp(self.iter(), other.iter())
+    }
+}
+
+#[cfg(feature = "nightly")]
+impl<K, V> Ord for LinearMap<K, V> where K: Ord, V: Ord {
+    fn cmp(&self, other: &Self) -> Ordering { iter::order::cmp(self.iter(), other.iter()) }
 }
 
 /// A view into a single occupied location in a LinearMap.
