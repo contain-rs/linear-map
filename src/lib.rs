@@ -3,6 +3,7 @@
 #![warn(missing_docs)]
 #![cfg_attr(all(test, feature = "nightly"), feature(test))]
 
+use std::borrow::Borrow;
 #[cfg(feature = "nightly")] use std::fmt::{self, Debug};
 use std::iter::{self, Map};
 use std::mem;
@@ -36,13 +37,13 @@ use self::Entry::{Occupied, Vacant};
 /// book_reviews.insert("The Adventures of Sherlock Holmes", "Eye lyked it alot.");
 ///
 /// // check for a specific one.
-/// if !book_reviews.contains_key(&("Les Misérables")) {
+/// if !book_reviews.contains_key("Les Misérables") {
 ///     println!("We've got {} reviews, but Les Misérables ain't one.",
 ///              book_reviews.len());
 /// }
 ///
 /// // oops, this review has a lot of spelling mistakes, let's delete it.
-/// book_reviews.remove(&("The Adventures of Sherlock Holmes"));
+/// book_reviews.remove("The Adventures of Sherlock Holmes");
 ///
 /// // look up the values associated with some keys.
 /// let to_find = ["Pride and Prejudice", "Alice's Adventure in Wonderland"];
@@ -163,9 +164,9 @@ impl<K:Eq,V> LinearMap<K,V> {
     }
 
     /// Returns a reference to the value corresponding to the key.
-    pub fn get<'a>(&'a self, key: &K) -> Option<&'a V> {
+    pub fn get<'a, Q: ?Sized>(&'a self, key: &Q) -> Option<&'a V> where K: Borrow<Q>, Q: Eq {
         for (k, v) in self.iter() {
-            if key == k {
+            if key == k.borrow() {
                 return Some(v);
             }
         }
@@ -173,9 +174,11 @@ impl<K:Eq,V> LinearMap<K,V> {
     }
 
     /// Returns a mutable reference to the value corresponding to the key.
-    pub fn get_mut<'a>(&'a mut self, key: &K) -> Option<&'a mut V> {
+    pub fn get_mut<'a, Q: ?Sized>(&'a mut self, key: &Q) -> Option<&'a mut V>
+        where K: Borrow<Q>, Q: Eq {
+
         for (k, v) in self.iter_mut() {
-            if key == k {
+            if key == k.borrow() {
                 return Some(v);
             }
         }
@@ -183,7 +186,7 @@ impl<K:Eq,V> LinearMap<K,V> {
     }
 
     /// Returns true if the map contains a value to the specified key.
-    pub fn contains_key(&self, key: &K) -> bool {
+    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool where K: Borrow<Q>, Q: Eq {
         self.get(key).is_some()
     }
 
@@ -207,12 +210,12 @@ impl<K:Eq,V> LinearMap<K,V> {
 
     /// Removes a key-value pair from the map. If the key had a value present
     /// in the map, it is returned. Otherwise, `None` is returned.
-    pub fn remove(&mut self, key: &K) -> Option<V> {
+    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V> where K: Borrow<Q>, Q: Eq {
         for i in 0..self.storage.len() {
             let found;
             {
                 let (ref k, _) = self.storage[i];
-                found = key == k;
+                found = key == k.borrow();
             }
             if found {
                 let (_, v) = self.storage.swap_remove(i);
