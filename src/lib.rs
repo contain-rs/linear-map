@@ -7,6 +7,7 @@ use std::borrow::Borrow;
 #[cfg(feature = "nightly")] use std::fmt::{self, Debug};
 use std::iter::{self, Map};
 use std::mem;
+use std::ops;
 use std::slice;
 
 use self::Entry::{Occupied, Vacant};
@@ -257,6 +258,11 @@ impl<K, V> iter::FromIterator<(K, V)> for LinearMap<K, V> where K: Eq {
         map.extend(key_values);
         map
     }
+}
+
+impl<'a, K, V, Q: ?Sized> ops::Index<&'a Q> for LinearMap<K, V> where K: Eq + Borrow<Q>, Q: Eq {
+    type Output = V;
+    fn index(&self, key: &'a Q) -> &V { self.get(key).expect("key not found") }
 }
 
 /// A view into a single occupied location in a LinearMap.
