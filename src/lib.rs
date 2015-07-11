@@ -62,7 +62,7 @@ pub struct LinearMap<K,V> {
     storage: Vec<(K,V)>,
 }
 
-impl<K:PartialEq+Eq,V> LinearMap<K,V> {
+impl<K:Eq,V> LinearMap<K,V> {
     /// Creates an empty map. This method does not allocate.
     pub fn new() -> LinearMap<K,V> {
         LinearMap {
