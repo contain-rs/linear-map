@@ -3,7 +3,8 @@
 #![warn(missing_docs)]
 #![cfg_attr(all(test, feature = "nightly"), feature(test))]
 
-use std::iter::Map;
+#[cfg(feature = "nightly")] use std::fmt::{self, Debug};
+use std::iter::{self, Map};
 use std::mem;
 use std::slice;
 
@@ -233,6 +234,27 @@ impl<K:Eq,V> LinearMap<K,V> {
                 index: index
             })
         }
+    }
+}
+
+#[cfg(feature = "nightly")]
+impl<K, V> Debug for LinearMap<K, V> where K: Eq + Debug, V: Debug {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_map().entries(self.iter()).finish()
+    }
+}
+
+impl<K, V> Extend<(K, V)> for LinearMap<K, V> where K: Eq {
+    fn extend<I: IntoIterator<Item = (K, V)>>(&mut self, key_values: I) {
+        for (key, value) in key_values { self.insert(key, value); }
+    }
+}
+
+impl<K, V> iter::FromIterator<(K, V)> for LinearMap<K, V> where K: Eq {
+    fn from_iter<I: IntoIterator<Item = (K, V)>>(key_values: I) -> Self {
+        let mut map = Self::new();
+        map.extend(key_values);
+        map
     }
 }
 
