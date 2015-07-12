@@ -2,9 +2,15 @@
 
 #![warn(missing_docs)]
 #![cfg_attr(all(test, feature = "nightly"), feature(test))]
+#![cfg_attr(feature = "nightly", feature(iter_order))]
 
-use std::iter::Map;
+use std::borrow::Borrow;
+#[cfg(feature = "nightly")] use std::cmp::Ordering;
+#[cfg(feature = "nightly")] use std::fmt::{self, Debug};
+use std::hash::{self, Hash};
+use std::iter::{self, Map};
 use std::mem;
+use std::ops;
 use std::slice;
 
 use self::Entry::{Occupied, Vacant};
@@ -35,13 +41,13 @@ use self::Entry::{Occupied, Vacant};
 /// book_reviews.insert("The Adventures of Sherlock Holmes", "Eye lyked it alot.");
 ///
 /// // check for a specific one.
-/// if !book_reviews.contains_key(&("Les Misérables")) {
+/// if !book_reviews.contains_key("Les Misérables") {
 ///     println!("We've got {} reviews, but Les Misérables ain't one.",
 ///              book_reviews.len());
 /// }
 ///
 /// // oops, this review has a lot of spelling mistakes, let's delete it.
-/// book_reviews.remove(&("The Adventures of Sherlock Holmes"));
+/// book_reviews.remove("The Adventures of Sherlock Holmes");
 ///
 /// // look up the values associated with some keys.
 /// let to_find = ["Pride and Prejudice", "Alice's Adventure in Wonderland"];
@@ -62,7 +68,7 @@ pub struct LinearMap<K,V> {
     storage: Vec<(K,V)>,
 }
 
-impl<K:PartialEq+Eq,V> LinearMap<K,V> {
+impl<K:Eq,V> LinearMap<K,V> {
     /// Creates an empty map. This method does not allocate.
     pub fn new() -> LinearMap<K,V> {
         LinearMap {
@@ -162,9 +168,9 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
     }
 
     /// Returns a reference to the value corresponding to the key.
-    pub fn get<'a>(&'a self, key: &K) -> Option<&'a V> {
+    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V> where K: Borrow<Q>, Q: Eq {
         for (k, v) in self.iter() {
-            if key == k {
+            if key == k.borrow() {
                 return Some(v);
             }
         }
@@ -172,9 +178,9 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
     }
 
     /// Returns a mutable reference to the value corresponding to the key.
-    pub fn get_mut<'a>(&'a mut self, key: &K) -> Option<&'a mut V> {
+    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V> where K: Borrow<Q>, Q: Eq {
         for (k, v) in self.iter_mut() {
-            if key == k {
+            if key == k.borrow() {
                 return Some(v);
             }
         }
@@ -182,7 +188,7 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
     }
 
     /// Returns true if the map contains a value to the specified key.
-    pub fn contains_key(&self, key: &K) -> bool {
+    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool where K: Borrow<Q>, Q: Eq {
         self.get(key).is_some()
     }
 
@@ -206,12 +212,12 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
 
     /// Removes a key-value pair from the map. If the key had a value present
     /// in the map, it is returned. Otherwise, `None` is returned.
-    pub fn remove(&mut self, key: &K) -> Option<V> {
+    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V> where K: Borrow<Q>, Q: Eq {
         for i in 0..self.storage.len() {
             let found;
             {
                 let (ref k, _) = self.storage[i];
-                found = key == k;
+                found = key == k.borrow();
             }
             if found {
                 let (_, v) = self.storage.swap_remove(i);
@@ -234,6 +240,58 @@ impl<K:PartialEq+Eq,V> LinearMap<K,V> {
             })
         }
     }
+}
+
+#[cfg(feature = "nightly")]
+impl<K, V> Debug for LinearMap<K, V> where K: Eq + Debug, V: Debug {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_map().entries(self.iter()).finish()
+    }
+}
+
+impl<K, V> Extend<(K, V)> for LinearMap<K, V> where K: Eq {
+    fn extend<I: IntoIterator<Item = (K, V)>>(&mut self, key_values: I) {
+        for (key, value) in key_values { self.insert(key, value); }
+    }
+}
+
+impl<K, V> iter::FromIterator<(K, V)> for LinearMap<K, V> where K: Eq {
+    fn from_iter<I: IntoIterator<Item = (K, V)>>(key_values: I) -> Self {
+        let mut map = Self::new();
+        map.extend(key_values);
+        map
+    }
+}
+
+impl<K, V> Hash for LinearMap<K, V> where K: Eq + Hash, V: Hash {
+    fn hash<H: hash::Hasher>(&self, h: &mut H) {
+        for e in self { e.hash(h); }
+    }
+}
+
+impl<'a, K, V, Q: ?Sized> ops::Index<&'a Q> for LinearMap<K, V> where K: Eq + Borrow<Q>, Q: Eq {
+    type Output = V;
+    fn index(&self, key: &'a Q) -> &V { self.get(key).expect("key not found") }
+}
+
+#[cfg(feature = "nightly")]
+impl<K, V> PartialEq for LinearMap<K, V> where K: Eq, V: PartialEq {
+    fn eq(&self, other: &Self) -> bool { iter::order::eq(self.iter(), other.iter()) }
+}
+
+#[cfg(feature = "nightly")]
+impl<K, V> Eq for LinearMap<K, V> where K: Eq, V: Eq {}
+
+#[cfg(feature = "nightly")]
+impl<K, V> PartialOrd for LinearMap<K, V> where K: Eq + PartialOrd, V: PartialOrd {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        iter::order::partial_cmp(self.iter(), other.iter())
+    }
+}
+
+#[cfg(feature = "nightly")]
+impl<K, V> Ord for LinearMap<K, V> where K: Ord, V: Ord {
+    fn cmp(&self, other: &Self) -> Ordering { iter::order::cmp(self.iter(), other.iter()) }
 }
 
 /// A view into a single occupied location in a LinearMap.
@@ -316,6 +374,25 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
     }
 }
 
+/// A consuming iterator over a map.
+pub struct IntoIter<K, V> {
+    iter: ::std::vec::IntoIter<(K, V)>,
+}
+
+impl<K, V> Iterator for IntoIter<K, V> {
+    type Item = (K, V);
+    fn next(&mut self) -> Option<Self::Item> { self.iter.next() }
+    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+}
+
+impl<K, V> DoubleEndedIterator for IntoIter<K, V> {
+    fn next_back(&mut self) -> Option<Self::Item> { self.iter.next_back() }
+}
+
+impl<K, V> ExactSizeIterator for IntoIter<K, V> {
+    fn len(&self) -> usize { self.iter.len() }
+}
+
 /// The iterator returned by `LinearMap::iter`.
 pub struct Iter<'a, K:'a, V:'a> {
     iter: Map<slice::Iter<'a, (K, V)>, fn(&'a (K, V)) -> (&'a K, &'a V)>,
@@ -336,62 +413,80 @@ pub struct Values<'a, K:'a, V:'a> {
     iter: Map<Iter<'a, K, V>, fn((&'a K, &'a V)) -> &'a V>,
 }
 
-impl<'a, K:'a, V:'a> Iterator for Iter<'a, K, V> {
+impl<'a, K, V> Iterator for Iter<'a, K, V> {
     type Item = (&'a K, &'a V);
     fn next(&mut self) -> Option<(&'a K, &'a V)> { self.iter.next() }
     fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
 }
 
-impl<'a, K:'a, V:'a> Iterator for IterMut<'a, K, V> {
+impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     type Item = (&'a K, &'a mut V);
     fn next(&mut self) -> Option<(&'a K, &'a mut V)> { self.iter.next() }
     fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
 }
 
-impl<'a, K:'a, V:'a> Iterator for Keys<'a, K, V> {
+impl<'a, K, V> Iterator for Keys<'a, K, V> {
     type Item = &'a K;
     fn next(&mut self) -> Option<&'a K> { self.iter.next() }
     fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
 }
 
-impl<'a, K:'a, V:'a> Iterator for Values<'a, K, V> {
+impl<'a, K, V> Iterator for Values<'a, K, V> {
     type Item = &'a V;
     fn next(&mut self) -> Option<&'a V> { self.iter.next() }
     fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
 }
 
-impl<'a, K:'a, V:'a> Clone for Iter<'a, K, V> {
+impl<'a, K, V> Clone for Iter<'a, K, V> {
     fn clone(&self) -> Iter<'a, K, V> { Iter { iter: self.iter.clone() } }
 }
 
-impl<'a, K:'a, V:'a> Clone for Keys<'a, K, V> {
+impl<'a, K, V> Clone for Keys<'a, K, V> {
     fn clone(&self) -> Keys<'a, K, V> { Keys { iter: self.iter.clone() } }
 }
 
-impl<'a, K:'a, V:'a> Clone for Values<'a, K, V> {
+impl<'a, K, V> Clone for Values<'a, K, V> {
     fn clone(&self) -> Values<'a, K, V> { Values { iter: self.iter.clone() } }
 }
 
-impl<'a, K:'a, V:'a> DoubleEndedIterator for Iter<'a, K, V> {
+impl<'a, K, V> DoubleEndedIterator for Iter<'a, K, V> {
     fn next_back(&mut self) -> Option<(&'a K, &'a V)> { self.iter.next_back() }
 }
 
-impl<'a, K:'a, V:'a> DoubleEndedIterator for IterMut<'a, K, V> {
+impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
     fn next_back(&mut self) -> Option<(&'a K, &'a mut V)> { self.iter.next_back() }
 }
 
-impl<'a, K:'a, V:'a> DoubleEndedIterator for Keys<'a, K, V> {
+impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
     fn next_back(&mut self) -> Option<&'a K> { self.iter.next_back() }
 }
 
-impl<'a, K:'a, V:'a> DoubleEndedIterator for Values<'a, K, V> {
+impl<'a, K, V> DoubleEndedIterator for Values<'a, K, V> {
     fn next_back(&mut self) -> Option<&'a V> { self.iter.next_back() }
 }
 
-impl<'a, K:'a, V:'a> ExactSizeIterator for Iter   <'a, K, V> { }
-impl<'a, K:'a, V:'a> ExactSizeIterator for IterMut<'a, K, V> { }
-impl<'a, K:'a, V:'a> ExactSizeIterator for Keys   <'a, K, V> { }
-impl<'a, K:'a, V:'a> ExactSizeIterator for Values <'a, K, V> { }
+impl<'a, K, V> ExactSizeIterator for Iter   <'a, K, V> { }
+impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> { }
+impl<'a, K, V> ExactSizeIterator for Keys   <'a, K, V> { }
+impl<'a, K, V> ExactSizeIterator for Values <'a, K, V> { }
+
+impl<K, V> IntoIterator for LinearMap<K, V> where K: Eq {
+    type Item = (K, V);
+    type IntoIter = IntoIter<K, V>;
+    fn into_iter(self) -> IntoIter<K, V> { IntoIter { iter: self.storage.into_iter() } }
+}
+
+impl<'a, K, V> IntoIterator for &'a LinearMap<K, V> where K: Eq {
+    type Item = (&'a K, &'a V);
+    type IntoIter = Iter<'a, K, V>;
+    fn into_iter(self) -> Iter<'a, K, V> { self.iter() }
+}
+
+impl<'a, K, V> IntoIterator for &'a mut LinearMap<K, V> where K: Eq {
+    type Item = (&'a K, &'a mut V);
+    type IntoIter = IterMut<'a, K, V>;
+    fn into_iter(self) -> IterMut<'a, K, V> { self.iter_mut() }
+}
 
 #[cfg(test)]
 mod test {
