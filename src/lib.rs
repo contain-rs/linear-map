@@ -63,7 +63,7 @@ use self::Entry::{Occupied, Vacant};
 ///     println!("{}: \"{}\"", *book, *review);
 /// }
 /// ```
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct LinearMap<K,V> {
     storage: Vec<(K,V)>,
 }
@@ -247,6 +247,10 @@ impl<K, V> Debug for LinearMap<K, V> where K: Eq + Debug, V: Debug {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_map().entries(self.iter()).finish()
     }
+}
+
+impl<K, V> Default for LinearMap<K, V> where K: Eq {
+    fn default() -> Self { LinearMap::new() }
 }
 
 impl<K, V> Extend<(K, V)> for LinearMap<K, V> where K: Eq {
