@@ -11,6 +11,7 @@ use std::iter::{self, Map};
 use std::mem;
 use std::ops;
 use std::slice;
+use std::borrow::{Cow, ToOwned, Borrow};
 
 use self::Entry::{Occupied, Vacant};
 
@@ -227,11 +228,28 @@ impl<K:Eq,V> LinearMap<K,V> {
     }
 
     /// Gets the given key's corresponding entry in the map for in-place manipulation.
-    pub fn entry(&mut self, key: K) -> Entry<K, V> {
-        match self.storage.iter().position(|&(ref k, _)| key == *k) {
+    pub fn entry(&mut self, key: K) -> Entry<K, K, V>
+        where K: Clone
+    {
+        self.entry_inner(Cow::Owned(key))
+    }
+
+    /// Gets the given key's corresponding entry in the map for in-place manipulation.
+    pub fn entry_lazy<'a, 'q, Q: ?Sized + 'q>(&'a mut self, key: &'q Q) -> Entry<'a, 'q, Q, K, V>
+        where Q: ToOwned<Owned = K> + Eq,
+              K: Borrow<Q> + 'q,
+    {
+        self.entry_inner(Cow::Borrowed(key))
+    }
+
+    fn entry_inner<'a, 'q, Q: ?Sized + 'q>(&'a mut self, moo: Cow<'q, Q>) -> Entry<'a, 'q, Q, K, V>
+        where Q: ToOwned<Owned = K> + Eq,
+              K: Borrow<Q> + 'q,
+    {
+        match self.storage.iter().position(|&(ref k, _)| *moo == *k.borrow()) {
             None => Vacant(VacantEntry {
                 map: self,
-                key: key
+                key: moo,
             }),
             Some(index) => Occupied(OccupiedEntry {
                 map: self,
@@ -299,21 +317,29 @@ pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
 }
 
 /// A view into a single empty location in a LinearMap.
-pub struct VacantEntry<'a, K: 'a, V: 'a> {
+pub struct VacantEntry<'a, 'q,
+        Q: ToOwned + ?Sized + 'q,
+        K: 'a + 'q,
+        V: 'a> {
     map: &'a mut LinearMap<K, V>,
-    key: K
+    key: Cow<'q, Q>
 }
 
 /// A view into a single location in a map, which may be vacant or occupied.
-pub enum Entry<'a, K: 'a, V: 'a> {
+pub enum Entry<'a, 'q,
+    Q: ToOwned + ?Sized + 'q,
+    K: 'a + 'q,
+    V: 'a> {
     /// An occupied Entry.
     Occupied(OccupiedEntry<'a, K, V>),
 
     /// A vacant Entry.
-    Vacant(VacantEntry<'a, K, V>)
+    Vacant(VacantEntry<'a, 'q, Q, K, V>)
 }
 
-impl<'a, K, V> Entry<'a, K, V> {
+impl<'a, 'q, Q: ?Sized, K: 'a + 'q, V> Entry<'a, 'q, Q, K, V>
+    where Q: ToOwned<Owned = K>,
+{
     /// Ensures a value is in the entry by inserting the default if empty, and returns
     /// a mutable reference to the value in the entry.
     pub fn or_insert(self, default: V) -> &'a mut V {
@@ -363,11 +389,13 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     }
 }
 
-impl<'a, K, V> VacantEntry<'a, K, V> {
+impl<'a, 'q, Q: ?Sized, K: 'a + 'q, V> VacantEntry<'a, 'q, Q, K, V>
+    where Q: ToOwned<Owned = K>,
+{
     /// Sets the value of the entry with the VacantEntry's key,
     /// and returns a mutable reference to it
     pub fn insert(self, value: V) -> &'a mut V {
-        self.map.storage.push((self.key, value));
+        self.map.storage.push((self.key.into_owned(), value));
         &mut self.map.storage.last_mut().unwrap().1
     }
 }
@@ -712,6 +740,24 @@ mod test {
         }
         assert_eq!(map.get(&10).unwrap(), &1000);
         assert_eq!(map.len(), 6);
+    }
+
+    #[test]
+    fn entry_v4() {
+        let mut map = LinearMap::new();
+        let key1 = "hello".to_string();
+        let key2 = "goodbye".to_string();
+        *map.entry_lazy(&key1).or_insert(0) += 1;
+        *map.entry_lazy(&key2).or_insert(0) += 1;
+        *map.entry(key1.clone()).or_insert(0) += 1;
+        *map.entry(key2).or_insert(0) += 1;
+        *map.entry_lazy(&*key1).or_insert(0) += 1;
+        *map.entry(key1).or_insert(0) += 1;
+
+        // LinearMap doesn't support indexing or Borrow lookup yet :/
+        assert_eq!(map.get(&"hello".to_string()).unwrap(), &4);
+        assert_eq!(map.get(&"goodbye".to_string()).unwrap(), &2);
+
     }
 }
 
