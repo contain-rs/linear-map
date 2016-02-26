@@ -269,7 +269,19 @@ impl<'a, K, V, Q: ?Sized> ops::Index<&'a Q> for LinearMap<K, V> where K: Eq + Bo
 }
 
 impl<K, V> PartialEq for LinearMap<K, V> where K: Eq, V: PartialEq {
-    fn eq(&self, other: &Self) -> bool { self.iter().eq(other.iter()) }
+    fn eq(&self, other: &Self) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+
+        for (key, value) in self {
+            if other.get(key) != Some(value) {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
 impl<K, V> Eq for LinearMap<K, V> where K: Eq, V: Eq {}
@@ -694,6 +706,24 @@ mod test {
         }
         assert_eq!(map.get(&10).unwrap(), &1000);
         assert_eq!(map.len(), 6);
+    }
+
+    #[test]
+    fn test_eq() {
+        let kvs = vec![('a', 1), ('b', 2), ('c', 3)];
+
+        let mut m1: LinearMap<_, _> = kvs.clone().into_iter().collect();
+        let m2: LinearMap<_, _> = kvs.into_iter().rev().collect();
+        assert_eq!(m1, m2);
+
+        m1.insert('a', 11);
+        assert!(m1 != m2);
+
+        m1.insert('a', 1);
+        assert_eq!(m1, m2);
+
+        m1.remove(&'a');
+        assert!(m1 != m2);
     }
 }
 
