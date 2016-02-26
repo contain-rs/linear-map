@@ -286,6 +286,12 @@ impl<K, V> PartialEq for LinearMap<K, V> where K: Eq, V: PartialEq {
 
 impl<K, V> Eq for LinearMap<K, V> where K: Eq, V: Eq {}
 
+impl<K: Eq, V> Into<Vec<(K, V)>> for LinearMap<K, V> {
+    fn into(self) -> Vec<(K, V)> {
+        self.storage
+    }
+}
+
 /// A view into a single occupied location in a LinearMap.
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
     map: &'a mut LinearMap<K, V>,
