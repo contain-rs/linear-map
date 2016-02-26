@@ -4,9 +4,7 @@
 #![cfg_attr(all(test, feature = "nightly"), feature(test))]
 
 use std::borrow::Borrow;
-use std::cmp::Ordering;
 use std::fmt::{self, Debug};
-use std::hash::{self, Hash};
 use std::iter::{self, Map};
 use std::mem;
 use std::ops;
@@ -265,12 +263,6 @@ impl<K, V> iter::FromIterator<(K, V)> for LinearMap<K, V> where K: Eq {
     }
 }
 
-impl<K, V> Hash for LinearMap<K, V> where K: Eq + Hash, V: Hash {
-    fn hash<H: hash::Hasher>(&self, h: &mut H) {
-        for e in self { e.hash(h); }
-    }
-}
-
 impl<'a, K, V, Q: ?Sized> ops::Index<&'a Q> for LinearMap<K, V> where K: Eq + Borrow<Q>, Q: Eq {
     type Output = V;
     fn index(&self, key: &'a Q) -> &V { self.get(key).expect("key not found") }
@@ -281,16 +273,6 @@ impl<K, V> PartialEq for LinearMap<K, V> where K: Eq, V: PartialEq {
 }
 
 impl<K, V> Eq for LinearMap<K, V> where K: Eq, V: Eq {}
-
-impl<K, V> PartialOrd for LinearMap<K, V> where K: Eq + PartialOrd, V: PartialOrd {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.iter().partial_cmp(other.iter())
-    }
-}
-
-impl<K, V> Ord for LinearMap<K, V> where K: Ord, V: Ord {
-    fn cmp(&self, other: &Self) -> Ordering { self.iter().cmp(other.iter()) }
-}
 
 /// A view into a single occupied location in a LinearMap.
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
