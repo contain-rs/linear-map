@@ -1,6 +1,6 @@
 //! A module providing a map implementation `LinearMap` backed by a vector.
 
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 #![cfg_attr(all(test, feature = "nightly"), feature(test))]
 
 use std::borrow::Borrow;
@@ -9,6 +9,7 @@ use std::iter;
 use std::mem;
 use std::ops;
 use std::slice;
+use std::vec;
 
 use self::Entry::{Occupied, Vacant};
 
@@ -128,6 +129,15 @@ impl<K: Eq, V> LinearMap<K, V> {
     /// reuse.
     pub fn clear(&mut self) {
         self.storage.clear();
+    }
+
+    /// Removes all key-value pairs from the map and returns an iterator that yields them in
+    /// arbitrary order.
+    ///
+    /// All key-value pairs are removed even if the iterator is not exhausted. However, the
+    /// behavior of this method is unspecified if the iterator is leaked.
+    pub fn drain(&mut self) -> Drain<K, V> {
+        Drain { iter: self.storage.drain(..) }
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. Iterator
@@ -369,7 +379,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
 
 /// A consuming iterator over a map.
 pub struct IntoIter<K, V> {
-    iter: ::std::vec::IntoIter<(K, V)>,
+    iter: vec::IntoIter<(K, V)>,
 }
 
 impl<K, V> Iterator for IntoIter<K, V> {
@@ -391,6 +401,37 @@ impl<K, V> DoubleEndedIterator for IntoIter<K, V> {
 }
 
 impl<K, V> ExactSizeIterator for IntoIter<K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+/// A draining iterator over a `LinearMap`.
+///
+/// See [`LinearMap::drain`](struct.LinearMap.html#method.drain) for details.
+pub struct Drain<'a, K: 'a, V: 'a> {
+    iter: vec::Drain<'a, (K, V)>,
+}
+
+impl<'a, K, V> Iterator for Drain<'a, K, V> {
+    type Item = (K, V);
+
+    fn next(&mut self) -> Option<(K, V)> {
+        self.iter.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<'a, K, V> DoubleEndedIterator for Drain<'a, K, V> {
+    fn next_back(&mut self) -> Option<(K, V)> {
+        self.iter.next_back()
+    }
+}
+
+impl<'a, K, V> ExactSizeIterator for Drain<'a, K, V> {
     fn len(&self) -> usize {
         self.iter.len()
     }
