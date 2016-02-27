@@ -299,6 +299,41 @@ impl<K: Eq, V> Into<Vec<(K, V)>> for LinearMap<K, V> {
     }
 }
 
+/// Creates a `LinearMap` from a list of key-value pairs. Code is thanks to
+/// [`maplit`][1].
+///
+/// ## Example
+///
+/// ```
+/// #[macro_use] extern crate linear_map;
+/// # fn main() {
+///
+/// let map = linear_map!{
+///     "a" => 1,
+///     "b" => 2,
+/// };
+/// assert_eq!(map["a"], 1);
+/// assert_eq!(map["b"], 2);
+/// assert_eq!(map.get("c"), None);
+/// # }
+/// ```
+///
+/// [1]: https://github.com/bluss/maplit
+#[macro_export]
+macro_rules! linear_map {
+    // trailing comma case
+    ($($key:expr => $value:expr,)+) => (linear_map!($($key => $value),+));
+    ( $($key:expr => $value:expr),* ) => {
+        {
+            let mut _map = $crate::LinearMap::new();
+            $(
+                _map.insert($key, $value);
+            )*
+            _map
+        }
+    };
+}
+
 /// A view into a single occupied location in a LinearMap.
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
     map: &'a mut LinearMap<K, V>,
@@ -855,6 +890,26 @@ mod test {
 
         m1.remove(&'a');
         assert!(m1 != m2);
+    }
+
+    #[test]
+    fn test_macro() {
+        let names = linear_map!{
+            1 => "one",
+            2 => "two",
+        };
+        assert_eq!(names.len(), 2);
+        assert_eq!(names[&1], "one");
+        assert_eq!(names[&2], "two");
+        assert_eq!(names.get(&3), None);
+
+        let empty: LinearMap<i32, i32> = linear_map!{};
+        assert_eq!(empty.len(), 0);
+
+        let _nested_compiles = linear_map!{
+            1 => linear_map!{0 => 1 + 2,},
+            2 => linear_map!{1 => 1,},
+        };
     }
 }
 
