@@ -508,13 +508,29 @@ impl<'a, K, V> DoubleEndedIterator for Values<'a, K, V> {
     }
 }
 
-impl<'a, K, V> ExactSizeIterator for Iter<'a, K, V> { }
+impl<'a, K, V> ExactSizeIterator for Iter<'a, K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
 
-impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> { }
+impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
 
-impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> { }
+impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
 
-impl<'a, K, V> ExactSizeIterator for Values<'a, K, V> { }
+impl<'a, K, V> ExactSizeIterator for Values<'a, K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
 
 impl<K: Eq, V> IntoIterator for LinearMap<K, V> {
     type Item = (K, V);
