@@ -60,7 +60,6 @@ use self::Entry::{Occupied, Vacant};
 ///     println!("{}: \"{}\"", *book, *review);
 /// }
 /// ```
-#[derive(Clone)]
 pub struct LinearMap<K,V> {
     storage: Vec<(K,V)>,
 }
@@ -236,6 +235,16 @@ impl<K:Eq,V> LinearMap<K,V> {
                 index: index
             })
         }
+    }
+}
+
+impl<K: Clone, V: Clone> Clone for LinearMap<K, V> {
+    fn clone(&self) -> Self {
+        LinearMap { storage: self.storage.clone() }
+    }
+
+    fn clone_from(&mut self, other: &Self) {
+        self.storage.clone_from(&other.storage);
     }
 }
 
