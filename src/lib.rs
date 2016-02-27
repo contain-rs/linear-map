@@ -348,10 +348,8 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     }
 
     /// Sets the value of the entry, and returns the entry's old value
-    pub fn insert(&mut self, mut value: V) -> V {
-        let old_value = self.get_mut();
-        mem::swap(&mut value, old_value);
-        value
+    pub fn insert(&mut self, value: V) -> V {
+        mem::replace(self.get_mut(), value)
     }
 
     /// Takes the value out of the entry, and returns it
