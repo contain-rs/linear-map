@@ -299,8 +299,7 @@ impl<K: Eq, V> Into<Vec<(K, V)>> for LinearMap<K, V> {
     }
 }
 
-/// Creates a `LinearMap` from a list of key-value pairs. Code is thanks to
-/// [`maplit`][1].
+/// Creates a `LinearMap` from a list of key-value pairs.
 ///
 /// ## Example
 ///
@@ -317,8 +316,6 @@ impl<K: Eq, V> Into<Vec<(K, V)>> for LinearMap<K, V> {
 /// assert_eq!(map.get("c"), None);
 /// # }
 /// ```
-///
-/// [1]: https://github.com/bluss/maplit
 #[macro_export]
 macro_rules! linear_map {
     // trailing comma case
