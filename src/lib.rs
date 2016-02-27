@@ -191,19 +191,10 @@ impl<K:Eq,V> LinearMap<K,V> {
     /// Inserts a key-value pair into the map. If the key already had a value
     /// present in the map, it is returned. Otherwise, `None` is returned.
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
-        for kv in self.storage.iter_mut() {
-            let found;
-            {
-                let &mut (ref k, _) = kv;
-                found = key == *k;
-            }
-            if found {
-                let (_, v) = mem::replace(kv, (key, value));
-                return Some(v);
-            }
+        match self.entry(key) {
+            Occupied(mut e) => Some(e.insert(value)),
+            Vacant(e) => { e.insert(value); None }
         }
-        self.storage.push((key, value));
-        None
     }
 
     /// Removes a key-value pair from the map. If the key had a value present
