@@ -299,7 +299,8 @@ impl<K: Eq, V> Into<Vec<(K, V)>> for LinearMap<K, V> {
     }
 }
 
-/// Creates a `LinearMap` from a list of key-value pairs.
+/// Creates a `LinearMap` from a list of key-value pairs. The created
+/// `LinearMap` has a capacity set to the number of entries provided.
 ///
 /// ## Example
 ///
@@ -318,11 +319,13 @@ impl<K: Eq, V> Into<Vec<(K, V)>> for LinearMap<K, V> {
 /// ```
 #[macro_export]
 macro_rules! linear_map {
-    // trailing comma case
-    ($($key:expr => $value:expr,)+) => (linear_map!($($key => $value),+));
-    ( $($key:expr => $value:expr),* ) => {
+    (@single $($x:tt)*) => (());
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(linear_map!(@single $rest)),*]));
+    ($($key:expr => $value:expr,)+) => { linear_map!($($key => $value),+) };
+    ($($key:expr => $value:expr),*) => {
         {
-            let mut _map = $crate::LinearMap::new();
+            let _cap = linear_map!(@count $($key),*);
+            let mut _map = $crate::LinearMap::with_capacity(_cap);
             $(
                 _map.insert($key, $value);
             )*
@@ -896,12 +899,14 @@ mod test {
             2 => "two",
         };
         assert_eq!(names.len(), 2);
+        assert_eq!(names.capacity(), 2);
         assert_eq!(names[&1], "one");
         assert_eq!(names[&2], "two");
         assert_eq!(names.get(&3), None);
 
         let empty: LinearMap<i32, i32> = linear_map!{};
         assert_eq!(empty.len(), 0);
+        assert_eq!(empty.capacity(), 0);
 
         let _nested_compiles = linear_map!{
             1 => linear_map!{0 => 1 + 2,},
