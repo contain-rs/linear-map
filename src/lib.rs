@@ -299,6 +299,41 @@ impl<K: Eq, V> Into<Vec<(K, V)>> for LinearMap<K, V> {
     }
 }
 
+/// Creates a `LinearMap` from a list of key-value pairs. The created
+/// `LinearMap` has a capacity set to the number of entries provided.
+///
+/// ## Example
+///
+/// ```
+/// #[macro_use] extern crate linear_map;
+/// # fn main() {
+///
+/// let map = linear_map!{
+///     "a" => 1,
+///     "b" => 2,
+/// };
+/// assert_eq!(map["a"], 1);
+/// assert_eq!(map["b"], 2);
+/// assert_eq!(map.get("c"), None);
+/// # }
+/// ```
+#[macro_export]
+macro_rules! linear_map {
+    (@single $($x:tt)*) => (());
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(linear_map!(@single $rest)),*]));
+    ($($key:expr => $value:expr,)+) => { linear_map!($($key => $value),+) };
+    ($($key:expr => $value:expr),*) => {
+        {
+            let _cap = linear_map!(@count $($key),*);
+            let mut _map = $crate::LinearMap::with_capacity(_cap);
+            $(
+                _map.insert($key, $value);
+            )*
+            _map
+        }
+    };
+}
+
 /// A view into a single occupied location in a LinearMap.
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
     map: &'a mut LinearMap<K, V>,
@@ -855,6 +890,28 @@ mod test {
 
         m1.remove(&'a');
         assert!(m1 != m2);
+    }
+
+    #[test]
+    fn test_macro() {
+        let names = linear_map!{
+            1 => "one",
+            2 => "two",
+        };
+        assert_eq!(names.len(), 2);
+        assert_eq!(names.capacity(), 2);
+        assert_eq!(names[&1], "one");
+        assert_eq!(names[&2], "two");
+        assert_eq!(names.get(&3), None);
+
+        let empty: LinearMap<i32, i32> = linear_map!{};
+        assert_eq!(empty.len(), 0);
+        assert_eq!(empty.capacity(), 0);
+
+        let _nested_compiles = linear_map!{
+            1 => linear_map!{0 => 1 + 2,},
+            2 => linear_map!{1 => 1,},
+        };
     }
 }
 
