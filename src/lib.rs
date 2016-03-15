@@ -237,14 +237,8 @@ impl<K: Eq, V> LinearMap<K, V> {
     /// *must* match that of the key type.
     pub fn remove<Q: ?Sized + Eq>(&mut self, key: &Q) -> Option<V> where K: Borrow<Q> {
         for i in 0..self.storage.len() {
-            let found;
-            {
-                let (ref k, _) = self.storage[i];
-                found = key == k.borrow();
-            }
-            if found {
-                let (_, v) = self.storage.swap_remove(i);
-                return Some(v);
+            if self.storage[i].0.borrow() == key {
+                return Some(self.storage.swap_remove(i).1);
             }
         }
         None
