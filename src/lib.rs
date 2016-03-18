@@ -1,7 +1,8 @@
-//! A module providing a map implementation `LinearMap` backed by a vector.
+//! A map implemented by searching linearly in a vector.
+//!
+//! See the [`LinearMap`](struct.LinearMap.html) type for details.
 
 #![deny(missing_docs)]
-#![cfg_attr(all(test, feature = "nightly"), feature(test))]
 
 use std::borrow::Borrow;
 use std::fmt::{self, Debug};
@@ -18,12 +19,22 @@ use self::Entry::{Occupied, Vacant};
 // that both of the `Vec`s have the same length, thus stuff like `iter` and so
 // on should probably be implemented in unsafe code.
 
-/// A very simple map implementation backed by a vector.
+/// A map implemented by searching linearly in a vector.
 ///
-/// Use it like any map, as long as the number of elements that it stores is
-/// very small.
+/// `LinearMap`'s keys are compared using the [`Eq`][eq] trait. All search operations
+/// (`contains_key`, `get`, `get_mut`, `insert`, and `remove`) run in `O(n)` time, making this
+/// implementation suitable only for small numbers of keys. The ordering of the keys in the
+/// underlying vector is arbitrary.
 ///
-/// # Example (like std's HashMap)
+/// It is a logic error for a key to be modified in such a way that the key's equality, as
+/// determined by the [`Eq`][eq] trait, changes while it is in the map. This is normally only
+/// possible through [`Cell`][cell], [`RefCell`][ref_cell], global state, I/O, or unsafe code.
+///
+/// [cell]: https://doc.rust-lang.org/nightly/std/cell/struct.Cell.html
+/// [eq]: https://doc.rust-lang.org/nightly/std/cmp/trait.Eq.html
+/// [ref_cell]: https://doc.rust-lang.org/nightly/std/cell/struct.RefCell.html
+///
+/// # Example
 ///
 /// ```
 /// use linear_map::LinearMap;
@@ -44,21 +55,21 @@ use self::Entry::{Occupied, Vacant};
 ///              book_reviews.len());
 /// }
 ///
-/// // oops, this review has a lot of spelling mistakes, let's delete it.
+/// // oops, this review has a lot of spelling mistakes. let's delete it.
 /// book_reviews.remove("The Adventures of Sherlock Holmes");
 ///
 /// // look up the values associated with some keys.
 /// let to_find = ["Pride and Prejudice", "Alice's Adventure in Wonderland"];
-/// for book in to_find.iter() {
+/// for book in &to_find {
 ///     match book_reviews.get(book) {
-///         Some(review) => println!("{}: {}", *book, *review),
-///         None => println!("{} is unreviewed.", *book)
+///         Some(review) => println!("{}: {}", book, review),
+///         None => println!("{} is unreviewed.", book)
 ///     }
 /// }
 ///
 /// // iterate over everything.
-/// for (book, review) in book_reviews.iter() {
-///     println!("{}: \"{}\"", *book, *review);
+/// for (book, review) in &book_reviews {
+///     println!("{}: \"{}\"", book, review);
 /// }
 /// ```
 pub struct LinearMap<K, V> {
@@ -136,38 +147,50 @@ impl<K: Eq, V> LinearMap<K, V> {
     ///
     /// All key-value pairs are removed even if the iterator is not exhausted. However, the
     /// behavior of this method is unspecified if the iterator is leaked.
+    ///
+    /// The iterator's item type is `(K, V)`.
     pub fn drain(&mut self) -> Drain<K, V> {
         Drain { iter: self.storage.drain(..) }
     }
 
-    /// An iterator visiting all key-value pairs in arbitrary order. Iterator
-    /// element type is `(&'a K, &'a V)`.
+    /// Returns an iterator yielding references to the map's keys and their corresponding values in
+    /// arbitrary order.
+    ///
+    /// The iterator's item type is `(&K, &V)`.
     pub fn iter(&self) -> Iter<K, V> {
         Iter { iter: self.storage.iter() }
     }
 
-    /// An iterator visiting all key-value pairs in arbitrary order with
-    /// mutable references to the values. Iterator element type is `(&'a K, &'a
-    /// mut V)`.
+    /// Returns an iterator yielding references to the map's keys and mutable references to their
+    /// corresponding values in arbitrary order.
+    ///
+    /// The iterator's item type is `(&K, &mut V)`.
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
         IterMut { iter: self.storage.iter_mut() }
     }
 
-    /// An iterator visiting all keys in arbitrary order. Iterator element type
-    /// is `&'a K`.
+    /// Returns an iterator yielding references to the map's keys in arbitrary order.
+    ///
+    /// The iterator's item type is `&K`.
     pub fn keys(&self) -> Keys<K, V> {
         Keys { iter: self.iter() }
     }
 
-    /// An iterator visiting all values in arbitrary order. Iterator element
-    /// type is `&'a V`.
+    /// Returns an iterator yielding references to the map's values in arbitrary order.
+    ///
+    /// The iterator's item type is `&V`.
     pub fn values(&self) -> Values<K, V> {
         Values { iter: self.iter() }
     }
 
-    /// Returns a reference to the value corresponding to the key.
-    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V> where K: Borrow<Q>, Q: Eq {
-        for (k, v) in self.iter() {
+    /// Returns a reference to the value in the map whose key is equal to the given key.
+    ///
+    /// Returns `None` if the map contains no such key.
+    ///
+    /// The given key may be any borrowed form of the map's key type, but `Eq` on the borrowed form
+    /// *must* match that of the key type.
+    pub fn get<Q: ?Sized + Eq>(&self, key: &Q) -> Option<&V> where K: Borrow<Q> {
+        for (k, v) in self {
             if key == k.borrow() {
                 return Some(v);
             }
@@ -175,9 +198,14 @@ impl<K: Eq, V> LinearMap<K, V> {
         None
     }
 
-    /// Returns a mutable reference to the value corresponding to the key.
-    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V> where K: Borrow<Q>, Q: Eq {
-        for (k, v) in self.iter_mut() {
+    /// Returns a mutable reference to the value in the map whose key is equal to the given key.
+    ///
+    /// Returns `None` if the map contains no such key.
+    ///
+    /// The given key may be any borrowed form of the map's key type, but `Eq` on the borrowed form
+    /// *must* match that of the key type.
+    pub fn get_mut<Q: ?Sized + Eq>(&mut self, key: &Q) -> Option<&mut V> where K: Borrow<Q> {
+        for (k, v) in self {
             if key == k.borrow() {
                 return Some(v);
             }
@@ -185,13 +213,24 @@ impl<K: Eq, V> LinearMap<K, V> {
         None
     }
 
-    /// Returns true if the map contains a value to the specified key.
-    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool where K: Borrow<Q>, Q: Eq {
+    /// Checks if the map contains a key that is equal to the given key.
+    ///
+    /// The given key may be any borrowed form of the map's key type, but `Eq` on the borrowed form
+    /// *must* match that of the key type.
+    pub fn contains_key<Q: ?Sized + Eq>(&self, key: &Q) -> bool where K: Borrow<Q> {
         self.get(key).is_some()
     }
 
-    /// Inserts a key-value pair into the map. If the key already had a value
-    /// present in the map, it is returned. Otherwise, `None` is returned.
+    /// Inserts a key-value pair into the map.
+    ///
+    /// Returns `None` if the map did not contain a key that is equal to the given key.
+    ///
+    /// If the map did contain such a key, its corresponding value is replaced with the given
+    /// value, and the old value is returned. The key is not updated, though. This matters for
+    /// values that can be `==` without being identical. See the [standard library's documentation]
+    /// [std] for more details.
+    ///
+    /// [std]: https://doc.rust-lang.org/nightly/std/collections/index.html#insert-and-complex-keys
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         match self.entry(key) {
             Occupied(mut e) => Some(e.insert(value)),
@@ -199,24 +238,23 @@ impl<K: Eq, V> LinearMap<K, V> {
         }
     }
 
-    /// Removes a key-value pair from the map. If the key had a value present
-    /// in the map, it is returned. Otherwise, `None` is returned.
-    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V> where K: Borrow<Q>, Q: Eq {
+    /// Removes the key in the map that is equal to the given key and returns its corresponding
+    /// value.
+    ///
+    /// Returns `None` if the map contained no such key.
+    ///
+    /// The given key may be any borrowed form of the map's key type, but `Eq` on the borrowed form
+    /// *must* match that of the key type.
+    pub fn remove<Q: ?Sized + Eq>(&mut self, key: &Q) -> Option<V> where K: Borrow<Q> {
         for i in 0..self.storage.len() {
-            let found;
-            {
-                let (ref k, _) = self.storage[i];
-                found = key == k.borrow();
-            }
-            if found {
-                let (_, v) = self.storage.swap_remove(i);
-                return Some(v);
+            if self.storage[i].0.borrow() == key {
+                return Some(self.storage.swap_remove(i).1);
             }
         }
         None
     }
 
-    /// Gets the given key's corresponding entry in the map for in-place manipulation.
+    /// Returns the given key's corresponding entry in the map for in-place manipulation.
     pub fn entry(&mut self, key: K) -> Entry<K, V> {
         match self.storage.iter().position(|&(ref k, _)| key == *k) {
             None => Vacant(VacantEntry {
@@ -299,10 +337,11 @@ impl<K: Eq, V> Into<Vec<(K, V)>> for LinearMap<K, V> {
     }
 }
 
-/// Creates a `LinearMap` from a list of key-value pairs. The created
-/// `LinearMap` has a capacity set to the number of entries provided.
+/// Creates a `LinearMap` from a list of key-value pairs.
 ///
-/// ## Example
+/// The created `LinearMap` has a capacity set to the number of entries provided.
+///
+/// # Example
 ///
 /// ```
 /// #[macro_use] extern crate linear_map;
@@ -334,30 +373,37 @@ macro_rules! linear_map {
     };
 }
 
-/// A view into a single occupied location in a LinearMap.
+/// A view into a single occupied location in a `LinearMap`.
+///
+/// See [`LinearMap::entry`](struct.LinearMap.html#method.entry) for details.
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
     map: &'a mut LinearMap<K, V>,
-    index: usize
+    index: usize,
 }
 
-/// A view into a single empty location in a LinearMap.
+/// A view into a single vacant location in a `LinearMap`.
+///
+/// See [`LinearMap::entry`](struct.LinearMap.html#method.entry) for details.
 pub struct VacantEntry<'a, K: 'a, V: 'a> {
     map: &'a mut LinearMap<K, V>,
-    key: K
+    key: K,
 }
 
-/// A view into a single location in a map, which may be vacant or occupied.
+/// A view into a single entry in a `LinearMap`.
+///
+/// See [`LinearMap::entry`](struct.LinearMap.html#method.entry) for details.
 pub enum Entry<'a, K: 'a, V: 'a> {
-    /// An occupied Entry.
+    /// An occupied entry.
     Occupied(OccupiedEntry<'a, K, V>),
 
-    /// A vacant Entry.
+    /// A vacant entry.
     Vacant(VacantEntry<'a, K, V>)
 }
 
 impl<'a, K, V> Entry<'a, K, V> {
-    /// Ensures a value is in the entry by inserting the default if empty, and returns
-    /// a mutable reference to the value in the entry.
+    /// Ensures that the entry is occupied by inserting the given value if it is vacant.
+    ///
+    /// Returns a mutable reference to the entry's value.
     pub fn or_insert(self, default: V) -> &'a mut V {
         match self {
             Occupied(entry) => entry.into_mut(),
@@ -365,8 +411,10 @@ impl<'a, K, V> Entry<'a, K, V> {
         }
     }
 
-    /// Ensures a value is in the entry by inserting the result of the default function if empty,
-    /// and returns a mutable reference to the value in the entry.
+    /// Ensures that the entry is occupied by inserting the the result of the given function if it
+    /// is vacant.
+    ///
+    /// Returns a mutable reference to the entry's value.
     pub fn or_insert_with<F: FnOnce() -> V>(self, default: F) -> &'a mut V {
         match self {
             Occupied(entry) => entry.into_mut(),
@@ -376,43 +424,47 @@ impl<'a, K, V> Entry<'a, K, V> {
 }
 
 impl<'a, K, V> OccupiedEntry<'a, K, V> {
-    /// Gets a reference to the value in the entry.
+    /// Returns a reference to the entry's value.
     pub fn get(&self) -> &V {
         &self.map.storage[self.index].1
     }
 
-    /// Gets a mutable reference to the value in the entry.
+    /// Returns a mutable reference to the entry's value.
     pub fn get_mut(&mut self) -> &mut V {
         &mut self.map.storage[self.index].1
     }
 
-    /// Converts the OccupiedEntry into a mutable reference to the value in the entry
-    /// with a lifetime bound to the map itself
+    /// Returns a mutable reference to the entry's value with the same lifetime as the map.
     pub fn into_mut(self) -> &'a mut V {
         &mut self.map.storage[self.index].1
     }
 
-    /// Sets the value of the entry, and returns the entry's old value
+    /// Replaces the entry's value with the given one and returns the previous value.
     pub fn insert(&mut self, value: V) -> V {
         mem::replace(self.get_mut(), value)
     }
 
-    /// Takes the value out of the entry, and returns it
+    /// Removes the entry from the map and returns its value.
     pub fn remove(self) -> V {
         self.map.storage.swap_remove(self.index).1
     }
 }
 
 impl<'a, K, V> VacantEntry<'a, K, V> {
-    /// Sets the value of the entry with the VacantEntry's key,
-    /// and returns a mutable reference to it
+    /// Inserts the entry into the map with the given value.
+    ///
+    /// Returns a mutable reference to the entry's value with the same lifetime as the map.
     pub fn insert(self, value: V) -> &'a mut V {
         self.map.storage.push((self.key, value));
         &mut self.map.storage.last_mut().unwrap().1
     }
 }
 
-/// A consuming iterator over a map.
+/// A consuming iterator over a `LinearMap`.
+///
+/// The iterator's order is arbitrary.
+///
+/// Acquire through [`IntoIterator`](struct.LinearMap.html#method.into_iter).
 pub struct IntoIter<K, V> {
     iter: vec::IntoIter<(K, V)>,
 }
@@ -420,7 +472,7 @@ pub struct IntoIter<K, V> {
 impl<K, V> Iterator for IntoIter<K, V> {
     type Item = (K, V);
 
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<(K, V)> {
         self.iter.next()
     }
 
@@ -430,7 +482,7 @@ impl<K, V> Iterator for IntoIter<K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for IntoIter<K, V> {
-    fn next_back(&mut self) -> Option<Self::Item> {
+    fn next_back(&mut self) -> Option<(K, V)> {
         self.iter.next_back()
     }
 }
@@ -472,22 +524,31 @@ impl<'a, K, V> ExactSizeIterator for Drain<'a, K, V> {
     }
 }
 
-/// The iterator returned by `LinearMap::iter`.
+/// An iterator yielding references to a `LinearMap`'s keys and their corresponding values.
+///
+/// See [`LinearMap::iter`](struct.LinearMap.html#method.iter) for details.
 pub struct Iter<'a, K: 'a, V: 'a> {
     iter: slice::Iter<'a, (K, V)>,
 }
 
-/// The iterator returned by `LinearMap::iter_mut`.
+/// An iterator yielding references to a `LinearMap`'s keys and mutable references to their
+/// corresponding values.
+///
+/// See [`LinearMap::iter_mut`](struct.LinearMap.html#method.iter_mut) for details.
 pub struct IterMut<'a, K: 'a, V: 'a> {
     iter: slice::IterMut<'a, (K, V)>,
 }
 
-/// The iterator returned by `LinearMap::keys`.
+/// An iterator yielding references to a `LinearMap`'s keys in arbitrary order.
+///
+/// See [`LinearMap::keys`](struct.LinearMap.html#method.keys) for details.
 pub struct Keys<'a, K: 'a, V: 'a> {
     iter: Iter<'a, K, V>,
 }
 
-/// The iterator returned by `LinearMap::values`.
+/// An iterator yielding references to a `LinearMap`'s values in arbitrary order.
+///
+/// See [`LinearMap::values`](struct.LinearMap.html#method.values) for details.
 pub struct Values<'a, K: 'a, V: 'a> {
     iter: Iter<'a, K, V>,
 }
@@ -644,361 +705,4 @@ fn assert_covariance() {
     fn d<'i, 'a, K, V>(x: Keys<'i, &'static K, &'static V>) -> Keys<'i, &'a K, &'a V> { x }
 
     fn e<'i, 'a, K, V>(x: Values<'i, &'static K, &'static V>) -> Values<'i, &'a K, &'a V> { x }
-}
-
-#[cfg(test)]
-mod test {
-    use super::LinearMap;
-    use super::Entry::{Occupied, Vacant};
-
-    const TEST_CAPACITY: usize = 10;
-
-    #[test]
-    fn test_new() {
-        let map: LinearMap<i32, i32> = LinearMap::new();
-        assert_eq!(map.capacity(), 0);
-        assert_eq!(map.len(), 0);
-        assert!(map.is_empty());
-    }
-
-    #[test]
-    fn test_with_capacity() {
-        let map: LinearMap<i32, i32> = LinearMap::with_capacity(TEST_CAPACITY);
-        assert!(map.capacity() >= TEST_CAPACITY);
-    }
-
-    #[test]
-    fn test_capacity() {
-        let mut map = LinearMap::new();
-        map.insert(1, 2);
-        assert!(map.capacity() >= 1);
-        map.remove(&1);
-        assert!(map.capacity() >= 1);
-        map.reserve(TEST_CAPACITY);
-        let capacity = map.capacity();
-        assert!(capacity >= TEST_CAPACITY);
-        for i in 0..TEST_CAPACITY as i32 {
-            assert!(map.insert(i, i).is_none());
-        }
-        assert_eq!(capacity, map.capacity());
-    }
-
-    #[test]
-    fn test_reserve() {
-        let mut map = LinearMap::new();
-        map.reserve(TEST_CAPACITY);
-        assert!(map.capacity() >= TEST_CAPACITY);
-        for i in 0..TEST_CAPACITY as i32 {
-            assert!(map.insert(i, i).is_none());
-        }
-        map.reserve(TEST_CAPACITY);
-        assert!(map.capacity() >= 2 * TEST_CAPACITY);
-
-        let mut map = LinearMap::new();
-        map.reserve(TEST_CAPACITY);
-        assert!(map.capacity() >= TEST_CAPACITY);
-        for i in 0..TEST_CAPACITY as i32 {
-            assert!(map.insert(i, i).is_none());
-        }
-        map.reserve(TEST_CAPACITY);
-        assert!(map.capacity() >= 2 * TEST_CAPACITY);
-    }
-
-    #[test]
-    fn test_shrink_to_fit() {
-        let mut map = LinearMap::new();
-        map.shrink_to_fit();
-        assert_eq!(map.capacity(), 0);
-        map.reserve(TEST_CAPACITY);
-        map.shrink_to_fit();
-        assert_eq!(map.capacity(), 0);
-        for i in 0..TEST_CAPACITY as i32 {
-            assert!(map.insert(i, i).is_none());
-        }
-        map.shrink_to_fit();
-        assert_eq!(map.len(), TEST_CAPACITY);
-        assert!(map.capacity() >= TEST_CAPACITY);
-    }
-
-    #[test]
-    fn test_len_and_is_empty() {
-        let mut map = LinearMap::new();
-        assert_eq!(map.len(), 0);
-        assert!(map.is_empty());
-        map.insert(100, 100);
-        assert_eq!(map.len(), 1);
-        assert!(!map.is_empty());
-        for i in 0..TEST_CAPACITY as i32 {
-            assert!(map.insert(i, i).is_none());
-        }
-        assert_eq!(map.len(), 1 + TEST_CAPACITY);
-        assert!(!map.is_empty());
-        assert!(map.remove(&100).is_some());
-        assert_eq!(map.len(), TEST_CAPACITY);
-        assert!(!map.is_empty());
-    }
-
-    #[test]
-    fn test_clear() {
-        let mut map = LinearMap::new();
-        map.clear();
-        assert_eq!(map.len(), 0);
-        for i in 0..TEST_CAPACITY as i32 {
-            assert!(map.insert(i, i).is_none());
-        }
-        map.clear();
-        assert_eq!(map.len(), 0);
-        assert!(map.capacity() > 0);
-    }
-
-    #[test]
-    fn test_iterators() {
-        const ONE:   i32 = 0b0001;
-        const TWO:   i32 = 0b0010;
-        const THREE: i32 = 0b0100;
-        const FOUR:  i32 = 0b1000;
-        const ALL:   i32 = 0b1111;
-        let mut map = LinearMap::new();
-        assert!(map.insert(ONE, TWO).is_none());
-        assert!(map.insert(TWO, THREE).is_none());
-        assert!(map.insert(THREE, FOUR).is_none());
-        assert!(map.insert(FOUR, ONE).is_none());
-
-        {
-            let mut result_k = 0;
-            let mut result_v = 0;
-            for (&k, &v) in map.iter() {
-                result_k ^= k;
-                result_v ^= v;
-                assert_eq!(((k << 1) & ALL) | ((k >> 3) & ALL), v);
-            }
-            assert_eq!(result_k, ALL);
-            assert_eq!(result_v, ALL);
-        }
-        {
-            let mut result_k = 0;
-            let mut result_v = 0;
-            for (&k, &mut v) in map.iter_mut() {
-                result_k ^= k;
-                result_v ^= v;
-                assert_eq!(((k << 1) & ALL) | ((k >> 3) & ALL), v);
-            }
-            assert_eq!(result_k, ALL);
-            assert_eq!(result_v, ALL);
-        }
-        {
-            let mut result = 0;
-            for &k in map.keys() {
-                result ^= k;
-            }
-            assert_eq!(result, ALL);
-        }
-        {
-            let mut result = 0;
-            for &v in map.values() {
-                result ^= v;
-            }
-            assert_eq!(result, ALL);
-        }
-    }
-
-    #[test]
-    fn test_insert_remove_get() {
-        let mut map = LinearMap::new();
-        assert!(map.insert(100, 101).is_none());
-        assert!(map.contains_key(&100));
-        assert_eq!(map.get(&100), Some(&101));
-        assert_eq!(map.get_mut(&100), Some(&mut 101));
-        for i in 0..TEST_CAPACITY as i32 {
-            assert!(map.insert(i, i).is_none());
-        }
-        assert_eq!(map.insert(100, 102), Some(101));
-        assert_eq!(map.remove(&100), Some(102));
-        assert_eq!(map.remove(&100), None);
-        assert_eq!(map.remove(&1000), None);
-    }
-
-    #[test]
-    fn test_entry() {
-        let xs = [(1, 10), (2, 20), (3, 30), (4, 40), (5, 50), (6, 60)];
-
-        let mut map = LinearMap::new();
-
-        for &(k, v) in &xs {
-            map.insert(k, v);
-        }
-
-        // Existing key (insert)
-        match map.entry(1) {
-            Vacant(_) => unreachable!(),
-            Occupied(mut view) => {
-                assert_eq!(view.get(), &10);
-                assert_eq!(view.insert(100), 10);
-            }
-        }
-        assert_eq!(map.get(&1).unwrap(), &100);
-        assert_eq!(map.len(), 6);
-
-
-        // Existing key (update)
-        match map.entry(2) {
-            Vacant(_) => unreachable!(),
-            Occupied(mut view) => {
-                let v = view.get_mut();
-                let new_v = (*v) * 10;
-                *v = new_v;
-            }
-        }
-        assert_eq!(map.get(&2).unwrap(), &200);
-        assert_eq!(map.len(), 6);
-
-        // Existing key (take)
-        match map.entry(3) {
-            Vacant(_) => unreachable!(),
-            Occupied(view) => {
-                assert_eq!(view.remove(), 30);
-            }
-        }
-        assert_eq!(map.get(&3), None);
-        assert_eq!(map.len(), 5);
-
-
-        // Inexistent key (insert)
-        match map.entry(10) {
-            Occupied(_) => unreachable!(),
-            Vacant(view) => {
-                assert_eq!(*view.insert(1000), 1000);
-            }
-        }
-        assert_eq!(map.get(&10).unwrap(), &1000);
-        assert_eq!(map.len(), 6);
-    }
-
-    #[test]
-    fn test_eq() {
-        let kvs = vec![('a', 1), ('b', 2), ('c', 3)];
-
-        let mut m1: LinearMap<_, _> = kvs.clone().into_iter().collect();
-        let m2: LinearMap<_, _> = kvs.into_iter().rev().collect();
-        assert_eq!(m1, m2);
-
-        m1.insert('a', 11);
-        assert!(m1 != m2);
-
-        m1.insert('a', 1);
-        assert_eq!(m1, m2);
-
-        m1.remove(&'a');
-        assert!(m1 != m2);
-    }
-
-    #[test]
-    fn test_macro() {
-        let names = linear_map!{
-            1 => "one",
-            2 => "two",
-        };
-        assert_eq!(names.len(), 2);
-        assert_eq!(names.capacity(), 2);
-        assert_eq!(names[&1], "one");
-        assert_eq!(names[&2], "two");
-        assert_eq!(names.get(&3), None);
-
-        let empty: LinearMap<i32, i32> = linear_map!{};
-        assert_eq!(empty.len(), 0);
-        assert_eq!(empty.capacity(), 0);
-
-        let _nested_compiles = linear_map!{
-            1 => linear_map!{0 => 1 + 2,},
-            2 => linear_map!{1 => 1,},
-        };
-    }
-}
-
-#[cfg(all(test, feature = "nightly"))]
-mod bench {
-    use super::LinearMap;
-
-    extern crate test;
-
-    const SMALL:  u32 =   10;
-    const MEDIUM: u32 =  100;
-    const BIG:    u32 = 1000;
-
-    fn insert(b: &mut test::Bencher, num: u32) {
-        b.iter(|| {
-            let mut map = LinearMap::new();
-            for i in 0..num {
-                map.insert(i, i);
-            }
-        })
-    }
-
-    fn remove_insert(b: &mut test::Bencher, num: u32) {
-        b.iter(|| {
-            let mut map = LinearMap::new();
-            for i in 0..num {
-                map.insert(i, i);
-            }
-            for i in 0..num {
-                map.remove(&i);
-            }
-        })
-    }
-
-    fn remove_rev_insert(b: &mut test::Bencher, num: u32) {
-        b.iter(|| {
-            let mut map = LinearMap::new();
-            for i in 0..num {
-                map.insert(i, i);
-            }
-            for i in 0..num {
-                map.remove(&(num - i - 1));
-            }
-        })
-    }
-
-    fn get_middle(b: &mut test::Bencher, num: u32) {
-        let mut map = LinearMap::new();
-        for i in 0..num {
-            map.insert(i, i);
-        }
-        let middle = num / 2;
-        b.iter(|| {
-            test::black_box(map.get(&middle));
-            test::black_box(map.get_mut(&middle));
-        })
-    }
-
-    fn get_none(b: &mut test::Bencher, num: u32) {
-        let mut map = LinearMap::new();
-        for i in 0..num {
-            map.insert(i, i);
-        }
-        let none = num + 1;
-        b.iter(|| {
-            test::black_box(map.get(&none));
-            test::black_box(map.get_mut(&none));
-        })
-    }
-
-    #[bench] fn bench_insert_small (b: &mut test::Bencher) { insert(b, SMALL);  }
-    #[bench] fn bench_insert_medium(b: &mut test::Bencher) { insert(b, MEDIUM); }
-    #[bench] fn bench_insert_big   (b: &mut test::Bencher) { insert(b, BIG);    }
-
-    #[bench] fn bench_remove_insert_small (b: &mut test::Bencher) { remove_insert(b, SMALL);  }
-    #[bench] fn bench_remove_insert_medium(b: &mut test::Bencher) { remove_insert(b, MEDIUM); }
-    #[bench] fn bench_remove_insert_big   (b: &mut test::Bencher) { remove_insert(b, BIG);    }
-
-    #[bench] fn bench_remove_rev_insert_small (b: &mut test::Bencher) { remove_rev_insert(b, SMALL);  }
-    #[bench] fn bench_remove_rev_insert_medium(b: &mut test::Bencher) { remove_rev_insert(b, MEDIUM); }
-    #[bench] fn bench_remove_rev_insert_big   (b: &mut test::Bencher) { remove_rev_insert(b, BIG);    }
-
-    #[bench] fn bench_get_middle_small (b: &mut test::Bencher) { get_middle(b, SMALL);  }
-    #[bench] fn bench_get_middle_medium(b: &mut test::Bencher) { get_middle(b, MEDIUM); }
-    #[bench] fn bench_get_middle_big   (b: &mut test::Bencher) { get_middle(b, BIG);    }
-
-    #[bench] fn bench_get_none_small (b: &mut test::Bencher) { get_none(b, SMALL);  }
-    #[bench] fn bench_get_none_medium(b: &mut test::Bencher) { get_none(b, MEDIUM); }
-    #[bench] fn bench_get_none_big   (b: &mut test::Bencher) { get_none(b, BIG);    }
 }
