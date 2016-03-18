@@ -46,20 +46,25 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-166' class='srclink' href='../src/linear_map/src/lib.rs.html.html#350-356' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-163' class='srclink' href='../src/linear_map/src/lib.rs.html#395-401' title='goto source code'>[src]</a></span></h1>
 <pre class='rust enum'>pub enum Entry&lt;'a, K: 'a, V: 'a&gt; {
     Occupied(<a class='struct' href='../linear_map/struct.OccupiedEntry.html' title='linear_map::OccupiedEntry'>OccupiedEntry</a>&lt;'a, K, V&gt;),
     Vacant(<a class='struct' href='../linear_map/struct.VacantEntry.html' title='linear_map::VacantEntry'>VacantEntry</a>&lt;'a, K, V&gt;),
-}</pre><div class='docblock'><p>A view into a single location in a map, which may be vacant or occupied.</p>
+}</pre><div class='docblock'><p>A view into a single entry in a <code>LinearMap</code>.</p>
+
+<p>See <a href="struct.LinearMap.html#method.entry"><code>LinearMap::entry</code></a> for details.</p>
 </div><h2 class='variants'>Variants</h2>
-<table class='variants_table'><tr><td id='variant.Occupied'><code>Occupied</code></td><td><div class='docblock'><p>An occupied Entry.</p>
-</div></td><td></td></tr><tr><td id='variant.Vacant'><code>Vacant</code></td><td><div class='docblock'><p>A vacant Entry.</p>
+<table class='variants_table'><tr><td id='variant.Occupied'><code>Occupied</code></td><td><div class='docblock'><p>An occupied entry.</p>
+</div></td><td></td></tr><tr><td id='variant.Vacant'><code>Vacant</code></td><td><div class='docblock'><p>A vacant entry.</p>
 </div></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;'a, K, V&gt; <a class='enum' href='../linear_map/enum.Entry.html' title='linear_map::Entry'>Entry</a>&lt;'a, K, V&gt;</code></h3><div class='impl-items'><h4 id='method.or_insert' class='method'><code>fn <a href='#method.or_insert' class='fnname'>or_insert</a>(self, default: V) -&gt; &amp;'a mut V</code></h4>
-<div class='docblock'><p>Ensures a value is in the entry by inserting the default if empty, and returns
-a mutable reference to the value in the entry.</p>
+<div class='docblock'><p>Ensures that the entry is occupied by inserting the given value if it is vacant.</p>
+
+<p>Returns a mutable reference to the entry&#39;s value.</p>
 </div><h4 id='method.or_insert_with' class='method'><code>fn <a href='#method.or_insert_with' class='fnname'>or_insert_with</a>&lt;F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>() -&gt; V&gt;(self, default: F) -&gt; &amp;'a mut V</code></h4>
-<div class='docblock'><p>Ensures a value is in the entry by inserting the result of the default function if empty,
-and returns a mutable reference to the value in the entry.</p>
+<div class='docblock'><p>Ensures that the entry is occupied by inserting the the result of the given function if it
+is vacant.</p>
+
+<p>Returns a mutable reference to the entry&#39;s value.</p>
 </div></div></section>
     <section id='search' class="content hidden"></section>
 
