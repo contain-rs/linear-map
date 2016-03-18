@@ -147,28 +147,38 @@ impl<K: Eq, V> LinearMap<K, V> {
     ///
     /// All key-value pairs are removed even if the iterator is not exhausted. However, the
     /// behavior of this method is unspecified if the iterator is leaked.
+    ///
+    /// The iterator's item type is `(K, V)`.
     pub fn drain(&mut self) -> Drain<K, V> {
         Drain { iter: self.storage.drain(..) }
     }
 
     /// Returns an iterator yielding references to the map's keys and their corresponding values in
     /// arbitrary order.
+    ///
+    /// The iterator's item type is `(&K, &V)`.
     pub fn iter(&self) -> Iter<K, V> {
         Iter { iter: self.storage.iter() }
     }
 
     /// Returns an iterator yielding references to the map's keys and mutable references to their
     /// corresponding values in arbitrary order.
+    ///
+    /// The iterator's item type is `(&K, &mut V)`.
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
         IterMut { iter: self.storage.iter_mut() }
     }
 
     /// Returns an iterator yielding references to the map's keys in arbitrary order.
+    ///
+    /// The iterator's item type is `&K`.
     pub fn keys(&self) -> Keys<K, V> {
         Keys { iter: self.iter() }
     }
 
     /// Returns an iterator yielding references to the map's values in arbitrary order.
+    ///
+    /// The iterator's item type is `&V`.
     pub fn values(&self) -> Values<K, V> {
         Values { iter: self.iter() }
     }
