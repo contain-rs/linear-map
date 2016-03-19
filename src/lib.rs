@@ -358,12 +358,10 @@ impl<K: Eq, V> Into<Vec<(K, V)>> for LinearMap<K, V> {
 /// ```
 #[macro_export]
 macro_rules! linear_map {
-    (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(linear_map!(@single $rest)),*]));
     ($($key:expr => $value:expr,)+) => { linear_map!($($key => $value),+) };
     ($($key:expr => $value:expr),*) => {
         {
-            let _cap = linear_map!(@count $($key),*);
+            let _cap = <[&str]>::len(&[$(stringify!($key)),*]);
             let mut _map = $crate::LinearMap::with_capacity(_cap);
             $(
                 _map.insert($key, $value);

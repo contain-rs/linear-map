@@ -1,9 +1,10 @@
 [package]
 name = "linear-map"
-version = "0.0.4"
+version = "1.0.0"
 license = "MIT/Apache-2.0"
-description = "A map backed by a vector"
+description = "A map implemented by searching linearly in a vector."
 authors = [
+    "Andrew Paseltiner <apaseltiner@gmail.com>",
     "Tobias Bucher <tobiasbucher5991@gmail.com>",
 ]
 repository = "https://github.com/contain-rs/linear-map"
@@ -13,3 +14,7 @@ readme = "README.md"
 
 [features]
 nightly = []
+
+[lib]
+test = false
+bench = false
