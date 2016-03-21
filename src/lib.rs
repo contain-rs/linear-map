@@ -4,6 +4,10 @@
 
 #![deny(missing_docs)]
 
+// Optional Serde support
+#[cfg(feature = "serde_impl")]
+pub mod serde;
+
 use std::borrow::Borrow;
 use std::fmt::{self, Debug};
 use std::iter;
