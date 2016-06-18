@@ -36,3 +36,33 @@ fn test_ser_de() {
         Token::MapEnd,
     ]);
 }
+
+mod set {
+    use serde_test::{Token, assert_tokens};
+    use linear_map::set::LinearSet;
+
+    #[test]
+    fn test_ser_de_empty() {
+        let set = LinearSet::<char>::new();
+        assert_tokens(&set, &[
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+        ]);
+    }
+
+    #[test]
+    fn test_ser_de() {
+        let mut set = LinearSet::new();
+        set.insert('b');
+        set.insert('a');
+        set.insert('c');
+
+        assert_tokens(&set, &[
+            Token::Seq { len: Some(3) },
+            Token::Char('b'),
+            Token::Char('a'),
+            Token::Char('c'),
+            Token::SeqEnd,
+        ]);
+    }
+}
