@@ -12,7 +12,6 @@ extern crate serde;
 use super::LinearMap;
 
 use self::serde::{Serialize, Serializer, Deserialize, Deserializer};
-use self::serde::ser::impls::MapIteratorVisitor;
 use self::serde::de::{Visitor, MapVisitor, Error};
 
 use std::marker::PhantomData;
@@ -25,7 +24,12 @@ impl<K, V> Serialize for LinearMap<K, V>
     fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
         where S: Serializer,
     {
-        serializer.serialize_map(MapIteratorVisitor::new(self.iter(), Some(self.len())))
+            let mut state = try!(serializer.serialize_map(Some(self.len())));
+            for (k, v) in self {
+                try!(serializer.serialize_map_key(&mut state, k));
+                try!(serializer.serialize_map_value(&mut state, v));
+            }
+            serializer.serialize_map_end(state)
     }
 }
 
