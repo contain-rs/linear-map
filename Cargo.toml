@@ -17,8 +17,8 @@ nightly = []
 serde_impl = ["serde", "serde_test"]
 
 [dependencies]
-serde = { version = "^0.7", optional = true }
-serde_test = { version = "^0.7", optional = true }
+serde = { version = "^0.8", optional = true }
+serde_test = { version = "^0.8", optional = true }
 
 [lib]
 test = false
