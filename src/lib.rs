@@ -471,6 +471,30 @@ pub struct IntoIter<K, V> {
     iter: vec::IntoIter<(K, V)>,
 }
 
+impl<K, V> Iterator for IntoIter<K, V> {
+    type Item = (K, V);
+
+    fn next(&mut self) -> Option<(K, V)> {
+        self.iter.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<K, V> DoubleEndedIterator for IntoIter<K, V> {
+    fn next_back(&mut self) -> Option<(K, V)> {
+        self.iter.next_back()
+    }
+}
+
+impl<K, V> ExactSizeIterator for IntoIter<K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
 /// A draining iterator over a `LinearMap`.
 ///
 /// See [`LinearMap::drain`](struct.LinearMap.html#method.drain) for details.
@@ -532,7 +556,6 @@ macro_rules! impl_iter {($typ:ty, $item:ty, $map:expr) => {
         }
     }
 }}
-impl_iter!{IntoIter<K,V>,  (K,V),  |e| e }
 impl_iter!{Drain<'a,K,V>,  (K,V),  |e| e }
 impl_iter!{Iter<'a,K,V>,  (&'a K, &'a V),  |e| (&e.0, &e.1) }
 impl_iter!{IterMut<'a,K,V>,  (&'a K, &'a mut V),  |e| (&e.0, &mut e.1) }
