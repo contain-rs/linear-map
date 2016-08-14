@@ -2,7 +2,7 @@
 name = "linear-map"
 version = "1.1.0"
 license = "MIT/Apache-2.0"
-description = "A map implemented by searching linearly in a vector."
+description = "A map implemented by searching linearly in a vector or slice."
 authors = [
     "Andrew Paseltiner <apaseltiner@gmail.com>",
     "Tobias Bucher <tobiasbucher5991@gmail.com>",
