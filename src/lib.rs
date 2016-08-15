@@ -502,30 +502,6 @@ pub struct Drain<'a, K: 'a, V: 'a> {
     iter: vec::Drain<'a, (K, V)>,
 }
 
-impl<'a, K, V> Iterator for Drain<'a, K, V> {
-    type Item = (K, V);
-
-    fn next(&mut self) -> Option<(K, V)> {
-        self.iter.next()
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-}
-
-impl<'a, K, V> DoubleEndedIterator for Drain<'a, K, V> {
-    fn next_back(&mut self) -> Option<(K, V)> {
-        self.iter.next_back()
-    }
-}
-
-impl<'a, K, V> ExactSizeIterator for Drain<'a, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
 /// An iterator yielding references to a `LinearMap`'s keys and their corresponding values.
 ///
 /// See [`LinearMap::iter`](struct.LinearMap.html#method.iter) for details.
@@ -555,53 +531,36 @@ pub struct Values<'a, K: 'a, V: 'a> {
     iter: Iter<'a, K, V>,
 }
 
-impl<'a, K, V> Iterator for Iter<'a, K, V> {
-    type Item = (&'a K, &'a V);
+macro_rules! impl_iter {($typ:ty, $item:ty, $map:expr) => {
+    impl<'a, K, V> Iterator for $typ {
+        type Item = $item;
 
-    fn next(&mut self) -> Option<(&'a K, &'a V)> {
-        self.iter.next().map(|e| (&e.0, &e.1))
+        fn next(&mut self) -> Option<Self::Item> {
+            self.iter.next().map($map)
+        }
+
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            self.iter.size_hint()
+        }
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-}
-
-impl<'a, K, V> Iterator for IterMut<'a, K, V> {
-    type Item = (&'a K, &'a mut V);
-
-    fn next(&mut self) -> Option<(&'a K, &'a mut V)> {
-        self.iter.next().map(|e| (&e.0, &mut e.1))
+    impl<'a, K, V> DoubleEndedIterator for $typ {
+        fn next_back(&mut self) -> Option<Self::Item> {
+            self.iter.next_back().map($map)
+        }
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
+    impl<'a, K, V> ExactSizeIterator for $typ {
+        fn len(&self) -> usize {
+            self.iter.len()
+        }
     }
-}
-
-impl<'a, K, V> Iterator for Keys<'a, K, V> {
-    type Item = &'a K;
-
-    fn next(&mut self) -> Option<&'a K> {
-        self.iter.next().map(|e| e.0)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-}
-
-impl<'a, K, V> Iterator for Values<'a, K, V> {
-    type Item = &'a V;
-
-    fn next(&mut self) -> Option<&'a V> {
-        self.iter.next().map(|e| e.1)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-}
+}}
+impl_iter!{Drain<'a,K,V>,  (K,V),  |e| e }
+impl_iter!{Iter<'a,K,V>,  (&'a K, &'a V),  |e| (&e.0, &e.1) }
+impl_iter!{IterMut<'a,K,V>,  (&'a K, &'a mut V),  |e| (&e.0, &mut e.1) }
+impl_iter!{Keys<'a,K,V>,  &'a K,  |e| e.0 }
+impl_iter!{Values<'a,K,V>,  &'a V,  |e| e.1 }
 
 impl<'a, K, V> Clone for Iter<'a, K, V> {
     fn clone(&self) -> Self {
@@ -618,54 +577,6 @@ impl<'a, K, V> Clone for Keys<'a, K, V> {
 impl<'a, K, V> Clone for Values<'a, K, V> {
     fn clone(&self) -> Self {
         Values { iter: self.iter.clone() }
-    }
-}
-
-impl<'a, K, V> DoubleEndedIterator for Iter<'a, K, V> {
-    fn next_back(&mut self) -> Option<(&'a K, &'a V)> {
-        self.iter.next_back().map(|e| (&e.0, &e.1))
-    }
-}
-
-impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
-    fn next_back(&mut self) -> Option<(&'a K, &'a mut V)> {
-        self.iter.next_back().map(|e| (&e.0, &mut e.1))
-    }
-}
-
-impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
-    fn next_back(&mut self) -> Option<&'a K> {
-        self.iter.next_back().map(|e| e.0)
-    }
-}
-
-impl<'a, K, V> DoubleEndedIterator for Values<'a, K, V> {
-    fn next_back(&mut self) -> Option<&'a V> {
-        self.iter.next_back().map(|e| e.1)
-    }
-}
-
-impl<'a, K, V> ExactSizeIterator for Iter<'a, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<'a, K, V> ExactSizeIterator for Values<'a, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
     }
 }
 
