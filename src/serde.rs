@@ -12,24 +12,25 @@ extern crate serde;
 use super::LinearMap;
 
 use self::serde::{Serialize, Serializer, Deserialize, Deserializer};
-use self::serde::de::{Visitor, MapVisitor, Error};
+use self::serde::de::{Visitor, MapAccess, SeqAccess, Error};
+use self::serde::ser::{SerializeMap, SerializeSeq};
 
 use std::marker::PhantomData;
+use std::fmt;
 
 impl<K, V> Serialize for LinearMap<K, V>
     where K: Serialize + Ord,
           V: Serialize,
 {
     #[inline]
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer,
     {
-            let mut state = try!(serializer.serialize_map(Some(self.len())));
-            for (k, v) in self {
-                try!(serializer.serialize_map_key(&mut state, k));
-                try!(serializer.serialize_map_value(&mut state, v));
-            }
-            serializer.serialize_map_end(state)
+        let mut state = try!(serializer.serialize_map(Some(self.len())));
+        for (k, v) in self {
+            try!(state.serialize_entry(k, v));
+        }
+        state.end()
     }
 }
 
@@ -47,41 +48,43 @@ impl<K, V> LinearMapVisitor<K, V> {
     }
 }
 
-impl<K, V> Visitor for LinearMapVisitor<K, V>
-    where K: Deserialize + Eq,
-          V: Deserialize,
+impl<'de, K, V> Visitor<'de> for LinearMapVisitor<K, V>
+    where K: Deserialize<'de> + Eq,
+          V: Deserialize<'de>,
 {
     type Value = LinearMap<K, V>;
 
+    fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "a LinearMap")
+    }
+
     #[inline]
-    fn visit_unit<E>(&mut self) -> Result<Self::Value, E>
+    fn visit_unit<E>(self) -> Result<Self::Value, E>
         where E: Error,
     {
         Ok(LinearMap::new())
     }
 
     #[inline]
-    fn visit_map<Visitor>(&mut self, mut visitor: Visitor) -> Result<Self::Value, Visitor::Error>
-        where Visitor: MapVisitor,
+    fn visit_map<Visitor>(self, mut visitor: Visitor) -> Result<Self::Value, Visitor::Error>
+        where Visitor: MapAccess<'de>,
     {
-        let mut values = LinearMap::with_capacity(visitor.size_hint().0);
+        let mut values = LinearMap::with_capacity(visitor.size_hint().unwrap_or(0));
 
-        while let Some((key, value)) = try!(visitor.visit()) {
+        while let Some((key, value)) = try!(visitor.next_entry()) {
             values.insert(key, value);
         }
-
-        try!(visitor.end());
 
         Ok(values)
     }
 }
 
-impl<K, V> Deserialize for LinearMap<K, V>
-    where K: Deserialize + Eq,
-          V: Deserialize,
+impl<'de, K, V> Deserialize<'de> for LinearMap<K, V>
+    where K: Deserialize<'de> + Eq,
+          V: Deserialize<'de>,
 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<LinearMap<K, V>, D::Error>
-        where D: Deserializer,
+    fn deserialize<D>(deserializer: D) -> Result<LinearMap<K, V>, D::Error>
+        where D: Deserializer<'de>,
     {
         deserializer.deserialize_map(LinearMapVisitor::new())
     }
