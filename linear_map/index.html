@@ -9,6 +9,7 @@
 
     <title>linear_map - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../normalize.css">
     <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
     
@@ -16,7 +17,7 @@
     
     
 </head>
-<body class="rustdoc">
+<body class="rustdoc mod">
     <!--[if lte IE 8]>
     <div class="warning">
         This old browser is unsupported and will most likely display funky
@@ -28,7 +29,7 @@
 
     <nav class="sidebar">
         
-        <p class='location'></p><script>window.sidebarCurrent = {name: 'linear_map', ty: 'mod', relpath: '../'};</script>
+        <p class='location'>Crate linear_map</p><div class="block items"><ul><li><a href="#macros">Macros</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li></ul></div><p class='location'></p><script>window.sidebarCurrent = {name: 'linear_map', ty: 'mod', relpath: '../'};</script>
     </nav>
 
     <nav class="sub">
@@ -42,94 +43,94 @@
         </form>
     </nav>
 
-    <section id='main' class="content mod">
-<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>linear_map</a></span><span class='out-of-band'><span id='render-detail'>
+    <section id='main' class="content">
+<h1 class='fqn'><span class='in-band'>Crate <a class="mod" href=''>linear_map</a></span><span class='out-of-band'><span id='render-detail'>
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-0' class='srclink' href='../src/linear_map/src/lib.rs.html#1-621' title='goto source code'>[src]</a></span></h1>
+               </span><a class='srclink' href='../src/linear_map/lib.rs.html#1-621' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>A map implemented by searching linearly in a vector.</p>
 
 <p>See the <a href="struct.LinearMap.html"><code>LinearMap</code></a> type for details.</p>
 </div><h2 id='macros' class='section-header'><a href="#macros">Macros</a></h2>
 <table>
                        <tr class=' module-item'>
-                           <td><a class='macro' href='macro.linear_map!.html'
-                                  title='linear_map::linear_map!'>linear_map!</a></td>
-                           <td class='docblock short'>
+                           <td><a class="macro" href="macro.linear_map.html"
+                                  title='macro linear_map::linear_map'>linear_map</a></td>
+                           <td class='docblock-short'>
                                 <p>Creates a <code>LinearMap</code> from a list of key-value pairs.</p>
                            </td>
                        </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
                        <tr class=' module-item'>
-                           <td><a class='struct' href='struct.Drain.html'
-                                  title='linear_map::Drain'>Drain</a></td>
-                           <td class='docblock short'>
+                           <td><a class="struct" href="struct.Drain.html"
+                                  title='struct linear_map::Drain'>Drain</a></td>
+                           <td class='docblock-short'>
                                 <p>A draining iterator over a <code>LinearMap</code>.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>
-                           <td><a class='struct' href='struct.IntoIter.html'
-                                  title='linear_map::IntoIter'>IntoIter</a></td>
-                           <td class='docblock short'>
+                           <td><a class="struct" href="struct.IntoIter.html"
+                                  title='struct linear_map::IntoIter'>IntoIter</a></td>
+                           <td class='docblock-short'>
                                 <p>A consuming iterator over a <code>LinearMap</code>.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>
-                           <td><a class='struct' href='struct.Iter.html'
-                                  title='linear_map::Iter'>Iter</a></td>
-                           <td class='docblock short'>
+                           <td><a class="struct" href="struct.Iter.html"
+                                  title='struct linear_map::Iter'>Iter</a></td>
+                           <td class='docblock-short'>
                                 <p>An iterator yielding references to a <code>LinearMap</code>&#39;s keys and their corresponding values.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>
-                           <td><a class='struct' href='struct.IterMut.html'
-                                  title='linear_map::IterMut'>IterMut</a></td>
-                           <td class='docblock short'>
+                           <td><a class="struct" href="struct.IterMut.html"
+                                  title='struct linear_map::IterMut'>IterMut</a></td>
+                           <td class='docblock-short'>
                                 <p>An iterator yielding references to a <code>LinearMap</code>&#39;s keys and mutable references to their
 corresponding values.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>
-                           <td><a class='struct' href='struct.Keys.html'
-                                  title='linear_map::Keys'>Keys</a></td>
-                           <td class='docblock short'>
+                           <td><a class="struct" href="struct.Keys.html"
+                                  title='struct linear_map::Keys'>Keys</a></td>
+                           <td class='docblock-short'>
                                 <p>An iterator yielding references to a <code>LinearMap</code>&#39;s keys in arbitrary order.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>
-                           <td><a class='struct' href='struct.LinearMap.html'
-                                  title='linear_map::LinearMap'>LinearMap</a></td>
-                           <td class='docblock short'>
+                           <td><a class="struct" href="struct.LinearMap.html"
+                                  title='struct linear_map::LinearMap'>LinearMap</a></td>
+                           <td class='docblock-short'>
                                 <p>A map implemented by searching linearly in a vector.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>
-                           <td><a class='struct' href='struct.OccupiedEntry.html'
-                                  title='linear_map::OccupiedEntry'>OccupiedEntry</a></td>
-                           <td class='docblock short'>
+                           <td><a class="struct" href="struct.OccupiedEntry.html"
+                                  title='struct linear_map::OccupiedEntry'>OccupiedEntry</a></td>
+                           <td class='docblock-short'>
                                 <p>A view into a single occupied location in a <code>LinearMap</code>.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>
-                           <td><a class='struct' href='struct.VacantEntry.html'
-                                  title='linear_map::VacantEntry'>VacantEntry</a></td>
-                           <td class='docblock short'>
+                           <td><a class="struct" href="struct.VacantEntry.html"
+                                  title='struct linear_map::VacantEntry'>VacantEntry</a></td>
+                           <td class='docblock-short'>
                                 <p>A view into a single vacant location in a <code>LinearMap</code>.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>
-                           <td><a class='struct' href='struct.Values.html'
-                                  title='linear_map::Values'>Values</a></td>
-                           <td class='docblock short'>
+                           <td><a class="struct" href="struct.Values.html"
+                                  title='struct linear_map::Values'>Values</a></td>
+                           <td class='docblock-short'>
                                 <p>An iterator yielding references to a <code>LinearMap</code>&#39;s values in arbitrary order.</p>
                            </td>
                        </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
 <table>
                        <tr class=' module-item'>
-                           <td><a class='enum' href='enum.Entry.html'
-                                  title='linear_map::Entry'>Entry</a></td>
-                           <td class='docblock short'>
+                           <td><a class="enum" href="enum.Entry.html"
+                                  title='enum linear_map::Entry'>Entry</a></td>
+                           <td class='docblock-short'>
                                 <p>A view into a single entry in a <code>LinearMap</code>.</p>
                            </td>
                        </tr></table></section>
@@ -188,11 +189,9 @@ corresponding values.</p>
     <script>
         window.rootPath = "../";
         window.currentCrate = "linear_map";
-        window.playgroundUrl = "";
     </script>
     <script src="../jquery.js"></script>
     <script src="../main.js"></script>
-    
     <script defer src="../search-index.js"></script>
 </body>
 </html>

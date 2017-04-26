@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="API documentation for the Rust `VacantEntry` struct in crate `linear_map`.">
-    <meta name="keywords" content="rust, rustlang, rust-lang, VacantEntry">
+    <meta name="description" content="API documentation for the Rust `linear_map` macro in crate `linear_map`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, linear_map">
 
-    <title>linear_map::VacantEntry - Rust</title>
+    <title>linear_map::linear_map - Rust</title>
 
     <link rel="stylesheet" type="text/css" href="../normalize.css">
     <link rel="stylesheet" type="text/css" href="../rustdoc.css">
@@ -17,7 +17,7 @@
     
     
 </head>
-<body class="rustdoc struct">
+<body class="rustdoc macro">
     <!--[if lte IE 8]>
     <div class="warning">
         This old browser is unsupported and will most likely display funky
@@ -29,7 +29,7 @@
 
     <nav class="sidebar">
         
-        <p class='location'>Struct VacantEntry</p><div class="block items"><ul><li><a href="#methods">Methods</a></li></ul></div><p class='location'><a href='index.html'>linear_map</a></p><script>window.sidebarCurrent = {name: 'VacantEntry', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+        <p class='location'><a href='index.html'>linear_map</a></p><script>window.sidebarCurrent = {name: 'linear_map', ty: 'macro', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </nav>
 
     <nav class="sub">
@@ -44,20 +44,32 @@
     </nav>
 
     <section id='main' class="content">
-<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>linear_map</a>::<wbr><a class="struct" href=''>VacantEntry</a></span><span class='out-of-band'><span id='render-detail'>
+<h1 class='fqn'><span class='in-band'>Macro <a href='index.html'>linear_map</a>::<wbr><a class="macro" href=''>linear_map</a></span><span class='out-of-band'><span id='render-detail'>
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a class='srclink' href='../src/linear_map/lib.rs.html#389-392' title='goto source code'>[src]</a></span></h1>
-<pre class='rust struct'>pub struct VacantEntry&lt;'a, K:&nbsp;'a, V:&nbsp;'a&gt; { /* fields omitted */ }</pre><div class='docblock'><p>A view into a single vacant location in a <code>LinearMap</code>.</p>
+               </span><a class='srclink' href='../src/linear_map/lib.rs.html#364-376' title='goto source code'>[src]</a></span></h1>
+<pre class="rust macro">
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">linear_map</span> {
+    ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>:<span class="ident">expr</span> <span class="op">=&gt;</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>,)<span class="op">+</span>) <span class="op">=&gt;</span> { ... };
+    ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>:<span class="ident">expr</span> <span class="op">=&gt;</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>),<span class="kw-2">*</span>) <span class="op">=&gt;</span> { ... };
+}</pre>
+<div class='docblock'><p>Creates a <code>LinearMap</code> from a list of key-value pairs.</p>
 
-<p>See <a href="struct.LinearMap.html#method.entry"><code>LinearMap::entry</code></a> for details.</p>
-</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a, K, V&gt; <a class="struct" href="../linear_map/struct.VacantEntry.html" title="struct linear_map::VacantEntry">VacantEntry</a>&lt;'a, K, V&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/linear_map/lib.rs.html#455-463' title='goto source code'>[src]</a></span></h3>
-<div class='impl-items'><h4 id='method.insert' class="method"><span id='insert.v' class='invisible'><code>fn <a href='#method.insert' class='fnname'>insert</a>(self, value: V) -&gt; &amp;'a mut V</code></span></h4>
-<div class='docblock'><p>Inserts the entry into the map with the given value.</p>
+<p>The created <code>LinearMap</code> has a capacity set to the number of entries provided.</p>
 
-<p>Returns a mutable reference to the entry&#39;s value with the same lifetime as the map.</p>
-</div></div></section>
+<h1 id='example' class='section-header'><a href='#example'>Example</a></h1>
+<pre class="rust rust-example-rendered">
+<span class="attribute">#[<span class="ident">macro_use</span>]</span> <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">linear_map</span>;
+
+<span class="kw">let</span> <span class="ident">map</span> <span class="op">=</span> <span class="macro">linear_map</span><span class="macro">!</span>{
+    <span class="string">&quot;a&quot;</span> <span class="op">=&gt;</span> <span class="number">1</span>,
+    <span class="string">&quot;b&quot;</span> <span class="op">=&gt;</span> <span class="number">2</span>,
+};
+<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">map</span>[<span class="string">&quot;a&quot;</span>], <span class="number">1</span>);
+<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">map</span>[<span class="string">&quot;b&quot;</span>], <span class="number">2</span>);
+<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">map</span>.<span class="ident">get</span>(<span class="string">&quot;c&quot;</span>), <span class="prelude-val">None</span>);</pre>
+</div></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
