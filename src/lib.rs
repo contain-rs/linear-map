@@ -7,6 +7,7 @@
 // Optional Serde support
 #[cfg(feature = "serde_impl")]
 pub mod serde;
+pub mod set;
 
 use std::borrow::Borrow;
 use std::fmt::{self, Debug};
