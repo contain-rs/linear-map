@@ -331,8 +331,16 @@ impl<T> LinearSet<T>
     /// v.clear();
     /// assert!(v.is_empty());
     /// ```
-
     pub fn clear(&mut self) { self.map.clear() }
+
+    /// Retains only the elements specified by the predicate.
+    ///
+    /// In other words, remove all elements `e` such that `f(&e)` returns `false`.
+    ///
+    pub fn retain<F>(&mut self, mut f: F)
+    where F: FnMut(&T) -> bool {
+        self.map.retain(|k, _| f(k));
+    }
 
     /// Returns `true` if the set contains a value.
     ///
