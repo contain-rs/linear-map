@@ -19,11 +19,6 @@ use std::vec;
 
 use self::Entry::{Occupied, Vacant};
 
-// TODO: Unzip the vectors?
-// Consideration: When unzipped, the compiler will not be able to understand
-// that both of the `Vec`s have the same length, thus stuff like `iter` and so
-// on should probably be implemented in unsafe code.
-
 /// A map implemented by searching linearly in a vector.
 ///
 /// `LinearMap`'s keys are compared using the [`Eq`][eq] trait. All search operations
