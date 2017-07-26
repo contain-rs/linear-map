@@ -142,6 +142,29 @@ impl<K: Eq, V> LinearMap<K, V> {
         self.storage.clear();
     }
 
+    /// Scan through the map and keep those key-value pairs where the
+    /// closure returns `true`.
+    ///
+    /// The order the elements are visited is not specified.
+    pub fn retain<F>(&mut self, mut keep_fn: F)
+    where F: FnMut(&K, &mut V) -> bool {
+        let mut del = 0;
+        {
+            let v = &mut *self.storage;
+            for i in 0..v.len() {
+                if !keep_fn(&v[i].0, &mut v[i].1) {
+                    del += 1;
+                } else if del > 0 {
+                    v.swap(i - del, i);
+                }
+            }
+        }
+        if del > 0 {
+            let len = self.storage.len();
+            self.storage.truncate(len - del);
+        }
+    }
+
     /// Removes all key-value pairs from the map and returns an iterator that yields them in
     /// arbitrary order.
     ///

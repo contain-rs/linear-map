@@ -312,3 +312,14 @@ fn test_into_vec() {
     let set_as_vec: Vec<_> = a.into();
     assert_eq!(set_as_vec, vec![0, 5, 11, 7]);
 }
+
+#[test]
+fn test_retain() {
+    let xs = [1,2,3,4,5,6];
+    let mut set: LinearSet<isize> = xs.iter().cloned().collect();
+    set.retain(|&k| k % 2 == 0);
+    assert_eq!(set.len(), 3);
+    assert!(set.contains(&2));
+    assert!(set.contains(&4));
+    assert!(set.contains(&6));
+}

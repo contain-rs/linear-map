@@ -266,3 +266,13 @@ fn test_macro() {
         2 => linear_map!{1 => 1,},
     };
 }
+
+#[test]
+fn test_retain() {
+    let mut map: LinearMap<isize, isize> = (0..100).map(|x|(x, x*10)).collect();
+    map.retain(|&k, _| k % 2 == 0);
+    assert_eq!(map.len(), 50);
+    assert_eq!(map[&2], 20);
+    assert_eq!(map[&4], 40);
+    assert_eq!(map[&6], 60);
+}
