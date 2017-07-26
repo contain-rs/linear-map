@@ -1,22 +1,23 @@
-//! A map implemented by searching linearly in a vector.
+//! A map implemented by searching linearly in a vector or slice.
 //!
 //! See the [`LinearMap`](struct.LinearMap.html) type for details.
 
 #![deny(missing_docs)]
 
+mod borrowed;
 // Optional Serde support
 #[cfg(feature = "serde_impl")]
 pub mod serde;
 pub mod set;
 
-use std::borrow::Borrow;
+use std::borrow::{Borrow, BorrowMut};
 use std::fmt::{self, Debug};
 use std::iter;
 use std::mem;
 use std::ops;
 use std::slice;
 use std::vec;
-
+use borrowed::LinearBorrowedMap;
 use self::Entry::{Occupied, Vacant};
 
 /// A map implemented by searching linearly in a vector.
@@ -126,16 +127,6 @@ impl<K: Eq, V> LinearMap<K, V> {
         self.storage.shrink_to_fit();
     }
 
-    /// Returns the number of elements in the map.
-    pub fn len(&self) -> usize {
-        self.storage.len()
-    }
-
-    /// Returns true if the map contains no elements.
-    pub fn is_empty(&self) -> bool {
-        self.storage.is_empty()
-    }
-
     /// Clears the map, removing all elements. Keeps the allocated memory for
     /// reuse.
     pub fn clear(&mut self) {
@@ -174,74 +165,6 @@ impl<K: Eq, V> LinearMap<K, V> {
     /// The iterator's item type is `(K, V)`.
     pub fn drain(&mut self) -> Drain<K, V> {
         Drain { iter: self.storage.drain(..) }
-    }
-
-    /// Returns an iterator yielding references to the map's keys and their corresponding values in
-    /// arbitrary order.
-    ///
-    /// The iterator's item type is `(&K, &V)`.
-    pub fn iter(&self) -> Iter<K, V> {
-        Iter { iter: self.storage.iter() }
-    }
-
-    /// Returns an iterator yielding references to the map's keys and mutable references to their
-    /// corresponding values in arbitrary order.
-    ///
-    /// The iterator's item type is `(&K, &mut V)`.
-    pub fn iter_mut(&mut self) -> IterMut<K, V> {
-        IterMut { iter: self.storage.iter_mut() }
-    }
-
-    /// Returns an iterator yielding references to the map's keys in arbitrary order.
-    ///
-    /// The iterator's item type is `&K`.
-    pub fn keys(&self) -> Keys<K, V> {
-        Keys { iter: self.iter() }
-    }
-
-    /// Returns an iterator yielding references to the map's values in arbitrary order.
-    ///
-    /// The iterator's item type is `&V`.
-    pub fn values(&self) -> Values<K, V> {
-        Values { iter: self.iter() }
-    }
-
-    /// Returns a reference to the value in the map whose key is equal to the given key.
-    ///
-    /// Returns `None` if the map contains no such key.
-    ///
-    /// The given key may be any borrowed form of the map's key type, but `Eq` on the borrowed form
-    /// *must* match that of the key type.
-    pub fn get<Q: ?Sized + Eq>(&self, key: &Q) -> Option<&V> where K: Borrow<Q> {
-        for (k, v) in self {
-            if key == k.borrow() {
-                return Some(v);
-            }
-        }
-        None
-    }
-
-    /// Returns a mutable reference to the value in the map whose key is equal to the given key.
-    ///
-    /// Returns `None` if the map contains no such key.
-    ///
-    /// The given key may be any borrowed form of the map's key type, but `Eq` on the borrowed form
-    /// *must* match that of the key type.
-    pub fn get_mut<Q: ?Sized + Eq>(&mut self, key: &Q) -> Option<&mut V> where K: Borrow<Q> {
-        for (k, v) in self {
-            if key == k.borrow() {
-                return Some(v);
-            }
-        }
-        None
-    }
-
-    /// Checks if the map contains a key that is equal to the given key.
-    ///
-    /// The given key may be any borrowed form of the map's key type, but `Eq` on the borrowed form
-    /// *must* match that of the key type.
-    pub fn contains_key<Q: ?Sized + Eq>(&self, key: &Q) -> bool where K: Borrow<Q> {
-        self.get(key).is_some()
     }
 
     /// Inserts a key-value pair into the map.
@@ -338,25 +261,61 @@ impl<'a, K: Eq + Borrow<Q>, V, Q: ?Sized + Eq> ops::Index<&'a Q> for LinearMap<K
 
 impl<K: Eq, V: PartialEq> PartialEq for LinearMap<K, V> {
     fn eq(&self, other: &Self) -> bool {
-        if self.len() != other.len() {
-            return false;
-        }
-
-        for (key, value) in self {
-            if other.get(key) != Some(value) {
-                return false;
-            }
-        }
-
-        true
+        self.len() == other.len()  &&
+        self.iter().find(|&(k,v)| other.get(k) != Some(v) ).is_none()
     }
 }
 
 impl<K: Eq, V: Eq> Eq for LinearMap<K, V> {}
 
+impl<K: Eq, V: PartialEq> PartialEq<LinearBorrowedMap<K, V>> for LinearMap<K, V> {
+    fn eq(&self, other: &LinearBorrowedMap<K, V>) -> bool {
+        &*self == other
+    }
+}
+
+impl<K: Eq, V: PartialEq> PartialEq<LinearMap<K, V>> for LinearBorrowedMap<K, V> {
+    fn eq(&self, other: &LinearMap<K, V>) -> bool {
+        self == &*other
+    }
+}
+
 impl<K: Eq, V> Into<Vec<(K, V)>> for LinearMap<K, V> {
     fn into(self) -> Vec<(K, V)> {
         self.storage
+    }
+}
+
+impl<K: Eq, V> AsRef<LinearBorrowedMap<K, V>> for LinearMap<K, V> {
+    fn as_ref(&self) -> &LinearBorrowedMap<K, V> {
+        unsafe{ LinearBorrowedMap::new_unchecked(&self.storage[..]) }
+    }
+}
+impl<K: Eq, V> Borrow<LinearBorrowedMap<K, V>> for LinearMap<K, V> {
+    fn borrow(&self) -> &LinearBorrowedMap<K, V> {
+        self.as_ref()
+    }
+}
+impl<K: Eq, V> ops::Deref for LinearMap<K, V> {
+    type Target = LinearBorrowedMap<K, V>;
+    fn deref(&self) -> &LinearBorrowedMap<K, V> {
+        self.as_ref()
+    }
+}
+
+impl<K: Eq, V> AsMut<LinearBorrowedMap<K, V>> for LinearMap<K, V> {
+    fn as_mut(&mut self) -> &mut LinearBorrowedMap<K, V> {
+        unsafe{ LinearBorrowedMap::new_mut_unchecked(&mut self.storage[..]) }
+    }
+}
+impl<K: Eq, V> BorrowMut<LinearBorrowedMap<K, V>> for LinearMap<K, V> {
+    fn borrow_mut(&mut self) -> &mut LinearBorrowedMap<K, V> {
+        self.as_mut()
+    }
+}
+impl<K: Eq, V> ops::DerefMut for LinearMap<K, V> {
+    fn deref_mut(&mut self) -> &mut LinearBorrowedMap<K, V> {
+        self.as_mut()
     }
 }
 
