@@ -199,6 +199,13 @@ impl<K: Eq, V> LinearMap<K, V> {
         Values { iter: self.iter() }
     }
 
+    /// Returns an iterator yielding mutable references to the map's values in arbitrary order.
+    ///
+    /// The iterator's item type is `&mut V`.
+    pub fn values_mut(&mut self) -> ValuesMut<K, V> {
+        ValuesMut { iter: self.iter_mut() }
+    }
+
     /// Returns a reference to the value in the map whose key is equal to the given key.
     ///
     /// Returns `None` if the map contains no such key.
@@ -543,6 +550,13 @@ pub struct Values<'a, K: 'a, V: 'a> {
     iter: Iter<'a, K, V>,
 }
 
+/// An iterator yielding mutable references to a `LinearMap`'s values in arbitrary order.
+///
+/// See [`LinearMap::values_mut`](struct.LinearMap.html#method.values_mut) for details.
+pub struct ValuesMut<'a, K: 'a, V: 'a> {
+    iter: IterMut<'a, K, V>,
+}
+
 macro_rules! impl_iter {($typ:ty, $item:ty, $map:expr) => {
     impl<'a, K, V> Iterator for $typ {
         type Item = $item;
@@ -573,6 +587,7 @@ impl_iter!{Iter<'a,K,V>,  (&'a K, &'a V),  |e| (&e.0, &e.1) }
 impl_iter!{IterMut<'a,K,V>,  (&'a K, &'a mut V),  |e| (&e.0, &mut e.1) }
 impl_iter!{Keys<'a,K,V>,  &'a K,  |e| e.0 }
 impl_iter!{Values<'a,K,V>,  &'a V,  |e| e.1 }
+impl_iter!{ValuesMut<'a,K,V>,  &'a mut V,  |e| e.1 }
 
 impl<'a, K, V> Clone for Iter<'a, K, V> {
     fn clone(&self) -> Self {
