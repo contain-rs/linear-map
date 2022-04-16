@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate linear_map;
 
-use linear_map::LinearMap;
 use linear_map::Entry::{Occupied, Vacant};
+use linear_map::LinearMap;
 
 const TEST_CAPACITY: usize = 10;
 
@@ -106,11 +106,11 @@ fn test_clear() {
 
 #[test]
 fn test_iterators() {
-    const ONE:   i32 = 0b0001;
-    const TWO:   i32 = 0b0010;
+    const ONE: i32 = 0b0001;
+    const TWO: i32 = 0b0010;
     const THREE: i32 = 0b0100;
-    const FOUR:  i32 = 0b1000;
-    const ALL:   i32 = 0b1111;
+    const FOUR: i32 = 0b1000;
+    const ALL: i32 = 0b1111;
     let mut map = LinearMap::new();
     assert!(map.insert(ONE, TWO).is_none());
     assert!(map.insert(TWO, THREE).is_none());
@@ -192,7 +192,6 @@ fn test_entry() {
     assert_eq!(map.get(&1).unwrap(), &100);
     assert_eq!(map.len(), 6);
 
-
     // Existing key (update)
     match map.entry(2) {
         Vacant(_) => unreachable!(),
@@ -214,7 +213,6 @@ fn test_entry() {
     }
     assert_eq!(map.get(&3), None);
     assert_eq!(map.len(), 5);
-
 
     // Inexistent key (insert)
     match map.entry(10) {
@@ -247,7 +245,7 @@ fn test_eq() {
 
 #[test]
 fn test_macro() {
-    let names = linear_map!{
+    let names = linear_map! {
         1 => "one",
         2 => "two",
     };
@@ -257,11 +255,11 @@ fn test_macro() {
     assert_eq!(names[&2], "two");
     assert_eq!(names.get(&3), None);
 
-    let empty: LinearMap<i32, i32> = linear_map!{};
+    let empty: LinearMap<i32, i32> = linear_map! {};
     assert_eq!(empty.len(), 0);
     assert_eq!(empty.capacity(), 0);
 
-    let _nested_compiles = linear_map!{
+    let _nested_compiles = linear_map! {
         1 => linear_map!{0 => 1 + 2,},
         2 => linear_map!{1 => 1,},
     };
@@ -269,7 +267,7 @@ fn test_macro() {
 
 #[test]
 fn test_retain() {
-    let mut map: LinearMap<isize, isize> = (0..100).map(|x|(x, x*10)).collect();
+    let mut map: LinearMap<isize, isize> = (0..100).map(|x| (x, x * 10)).collect();
     map.retain(|&k, _| k % 2 == 0);
     assert_eq!(map.len(), 50);
     assert_eq!(map[&2], 20);

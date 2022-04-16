@@ -9,23 +9,25 @@
 
 extern crate serde;
 
-use super::LinearMap;
 use super::set::LinearSet;
+use super::LinearMap;
 
-use self::serde::{Serialize, Serializer, Deserialize, Deserializer};
-use self::serde::de::{Visitor, MapAccess, SeqAccess, Error};
+use self::serde::de::{Error, MapAccess, SeqAccess, Visitor};
 use self::serde::ser::{SerializeMap, SerializeSeq};
+use self::serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use std::marker::PhantomData;
 use std::fmt;
+use std::marker::PhantomData;
 
 impl<K, V> Serialize for LinearMap<K, V>
-    where K: Serialize + Eq,
-          V: Serialize,
+where
+    K: Serialize + Eq,
+    V: Serialize,
 {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer,
+    where
+        S: Serializer,
     {
         let mut state = try!(serializer.serialize_map(Some(self.len())));
         for (k, v) in self {
@@ -50,8 +52,9 @@ impl<K, V> LinearMapVisitor<K, V> {
 }
 
 impl<'de, K, V> Visitor<'de> for LinearMapVisitor<K, V>
-    where K: Deserialize<'de> + Eq,
-          V: Deserialize<'de>,
+where
+    K: Deserialize<'de> + Eq,
+    V: Deserialize<'de>,
 {
     type Value = LinearMap<K, V>;
 
@@ -61,14 +64,16 @@ impl<'de, K, V> Visitor<'de> for LinearMapVisitor<K, V>
 
     #[inline]
     fn visit_unit<E>(self) -> Result<Self::Value, E>
-        where E: Error,
+    where
+        E: Error,
     {
         Ok(LinearMap::new())
     }
 
     #[inline]
     fn visit_map<Visitor>(self, mut visitor: Visitor) -> Result<Self::Value, Visitor::Error>
-        where Visitor: MapAccess<'de>
+    where
+        Visitor: MapAccess<'de>,
     {
         let mut values = LinearMap::with_capacity(visitor.size_hint().unwrap_or(0));
 
@@ -81,22 +86,26 @@ impl<'de, K, V> Visitor<'de> for LinearMapVisitor<K, V>
 }
 
 impl<'de, K, V> Deserialize<'de> for LinearMap<K, V>
-    where K: Deserialize<'de> + Eq,
-          V: Deserialize<'de>,
+where
+    K: Deserialize<'de> + Eq,
+    V: Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> Result<LinearMap<K, V>, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         deserializer.deserialize_map(LinearMapVisitor::new())
     }
 }
 
 impl<K> Serialize for LinearSet<K>
-    where K: Serialize + Eq
+where
+    K: Serialize + Eq,
 {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer,
+    where
+        S: Serializer,
     {
         let mut state = try!(serializer.serialize_seq(Some(self.len())));
         for k in self {
@@ -106,13 +115,12 @@ impl<K> Serialize for LinearSet<K>
     }
 }
 
-
 #[allow(missing_docs)]
 pub struct LinearSetVisitor<K> {
     marker: PhantomData<LinearSet<K>>,
 }
 
-impl<K> LinearSetVisitor<K>{
+impl<K> LinearSetVisitor<K> {
     #[allow(missing_docs)]
     pub fn new() -> Self {
         LinearSetVisitor {
@@ -122,7 +130,8 @@ impl<K> LinearSetVisitor<K>{
 }
 
 impl<'de, K> Visitor<'de> for LinearSetVisitor<K>
-    where K: Deserialize<'de> + Eq,
+where
+    K: Deserialize<'de> + Eq,
 {
     type Value = LinearSet<K>;
 
@@ -132,14 +141,16 @@ impl<'de, K> Visitor<'de> for LinearSetVisitor<K>
 
     #[inline]
     fn visit_unit<E>(self) -> Result<Self::Value, E>
-        where E: Error,
+    where
+        E: Error,
     {
         Ok(LinearSet::new())
     }
 
     #[inline]
     fn visit_seq<Visitor>(self, mut visitor: Visitor) -> Result<Self::Value, Visitor::Error>
-        where Visitor: SeqAccess<'de>
+    where
+        Visitor: SeqAccess<'de>,
     {
         let mut values = LinearSet::with_capacity(visitor.size_hint().unwrap_or(0));
 
@@ -152,10 +163,12 @@ impl<'de, K> Visitor<'de> for LinearSetVisitor<K>
 }
 
 impl<'de, K> Deserialize<'de> for LinearSet<K>
-    where K: Deserialize<'de> + Eq,
+where
+    K: Deserialize<'de> + Eq,
 {
     fn deserialize<D>(deserializer: D) -> Result<LinearSet<K>, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         deserializer.deserialize_seq(LinearSetVisitor::new())
     }

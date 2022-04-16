@@ -84,7 +84,9 @@ impl<K: Eq, V> LinearMap<K, V> {
 
     /// Creates an empty map with the given initial capacity.
     pub fn with_capacity(capacity: usize) -> Self {
-        LinearMap { storage: Vec::with_capacity(capacity) }
+        LinearMap {
+            storage: Vec::with_capacity(capacity),
+        }
     }
 
     /// Returns the number of elements the map can hold without reallocating.
@@ -147,7 +149,9 @@ impl<K: Eq, V> LinearMap<K, V> {
     ///
     /// The order the elements are visited is not specified.
     pub fn retain<F>(&mut self, mut keep_fn: F)
-    where F: FnMut(&K, &mut V) -> bool {
+    where
+        F: FnMut(&K, &mut V) -> bool,
+    {
         let mut del = 0;
         {
             let v = &mut *self.storage;
@@ -173,7 +177,9 @@ impl<K: Eq, V> LinearMap<K, V> {
     ///
     /// The iterator's item type is `(K, V)`.
     pub fn drain(&mut self) -> Drain<K, V> {
-        Drain { iter: self.storage.drain(..) }
+        Drain {
+            iter: self.storage.drain(..),
+        }
     }
 
     /// Returns an iterator yielding references to the map's keys and their corresponding values in
@@ -181,7 +187,9 @@ impl<K: Eq, V> LinearMap<K, V> {
     ///
     /// The iterator's item type is `(&K, &V)`.
     pub fn iter(&self) -> Iter<K, V> {
-        Iter { iter: self.storage.iter() }
+        Iter {
+            iter: self.storage.iter(),
+        }
     }
 
     /// Returns an iterator yielding references to the map's keys and mutable references to their
@@ -189,7 +197,9 @@ impl<K: Eq, V> LinearMap<K, V> {
     ///
     /// The iterator's item type is `(&K, &mut V)`.
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
-        IterMut { iter: self.storage.iter_mut() }
+        IterMut {
+            iter: self.storage.iter_mut(),
+        }
     }
 
     /// Returns an iterator yielding references to the map's keys in arbitrary order.
@@ -212,7 +222,10 @@ impl<K: Eq, V> LinearMap<K, V> {
     ///
     /// The given key may be any borrowed form of the map's key type, but `Eq` on the borrowed form
     /// *must* match that of the key type.
-    pub fn get<Q: ?Sized + Eq>(&self, key: &Q) -> Option<&V> where K: Borrow<Q> {
+    pub fn get<Q: ?Sized + Eq>(&self, key: &Q) -> Option<&V>
+    where
+        K: Borrow<Q>,
+    {
         for (k, v) in self {
             if key == k.borrow() {
                 return Some(v);
@@ -227,7 +240,10 @@ impl<K: Eq, V> LinearMap<K, V> {
     ///
     /// The given key may be any borrowed form of the map's key type, but `Eq` on the borrowed form
     /// *must* match that of the key type.
-    pub fn get_mut<Q: ?Sized + Eq>(&mut self, key: &Q) -> Option<&mut V> where K: Borrow<Q> {
+    pub fn get_mut<Q: ?Sized + Eq>(&mut self, key: &Q) -> Option<&mut V>
+    where
+        K: Borrow<Q>,
+    {
         for (k, v) in self {
             if key == k.borrow() {
                 return Some(v);
@@ -240,7 +256,10 @@ impl<K: Eq, V> LinearMap<K, V> {
     ///
     /// The given key may be any borrowed form of the map's key type, but `Eq` on the borrowed form
     /// *must* match that of the key type.
-    pub fn contains_key<Q: ?Sized + Eq>(&self, key: &Q) -> bool where K: Borrow<Q> {
+    pub fn contains_key<Q: ?Sized + Eq>(&self, key: &Q) -> bool
+    where
+        K: Borrow<Q>,
+    {
         self.get(key).is_some()
     }
 
@@ -257,7 +276,10 @@ impl<K: Eq, V> LinearMap<K, V> {
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         match self.entry(key) {
             Occupied(mut e) => Some(e.insert(value)),
-            Vacant(e) => { e.insert(value); None }
+            Vacant(e) => {
+                e.insert(value);
+                None
+            }
         }
     }
 
@@ -268,7 +290,10 @@ impl<K: Eq, V> LinearMap<K, V> {
     ///
     /// The given key may be any borrowed form of the map's key type, but `Eq` on the borrowed form
     /// *must* match that of the key type.
-    pub fn remove<Q: ?Sized + Eq>(&mut self, key: &Q) -> Option<V> where K: Borrow<Q> {
+    pub fn remove<Q: ?Sized + Eq>(&mut self, key: &Q) -> Option<V>
+    where
+        K: Borrow<Q>,
+    {
         for i in 0..self.storage.len() {
             if self.storage[i].0.borrow() == key {
                 return Some(self.storage.swap_remove(i).1);
@@ -282,19 +307,21 @@ impl<K: Eq, V> LinearMap<K, V> {
         match self.storage.iter().position(|&(ref k, _)| key == *k) {
             None => Vacant(VacantEntry {
                 map: self,
-                key: key
+                key: key,
             }),
             Some(index) => Occupied(OccupiedEntry {
                 map: self,
-                index: index
-            })
+                index: index,
+            }),
         }
     }
 }
 
 impl<K: Clone, V: Clone> Clone for LinearMap<K, V> {
     fn clone(&self) -> Self {
-        LinearMap { storage: self.storage.clone() }
+        LinearMap {
+            storage: self.storage.clone(),
+        }
     }
 
     fn clone_from(&mut self, other: &Self) {
@@ -316,7 +343,9 @@ impl<K: Eq, V> Default for LinearMap<K, V> {
 
 impl<K: Eq, V> Extend<(K, V)> for LinearMap<K, V> {
     fn extend<I: IntoIterator<Item = (K, V)>>(&mut self, key_values: I) {
-        for (key, value) in key_values { self.insert(key, value); }
+        for (key, value) in key_values {
+            self.insert(key, value);
+        }
     }
 }
 
@@ -418,7 +447,7 @@ pub enum Entry<'a, K: 'a, V: 'a> {
     Occupied(OccupiedEntry<'a, K, V>),
 
     /// A vacant entry.
-    Vacant(VacantEntry<'a, K, V>)
+    Vacant(VacantEntry<'a, K, V>),
 }
 
 impl<'a, K, V> Entry<'a, K, V> {
@@ -428,7 +457,7 @@ impl<'a, K, V> Entry<'a, K, V> {
     pub fn or_insert(self, default: V) -> &'a mut V {
         match self {
             Occupied(entry) => entry.into_mut(),
-            Vacant(entry) => entry.insert(default)
+            Vacant(entry) => entry.insert(default),
         }
     }
 
@@ -439,7 +468,7 @@ impl<'a, K, V> Entry<'a, K, V> {
     pub fn or_insert_with<F: FnOnce() -> V>(self, default: F) -> &'a mut V {
         match self {
             Occupied(entry) => entry.into_mut(),
-            Vacant(entry) => entry.insert(default())
+            Vacant(entry) => entry.insert(default()),
         }
     }
 }
@@ -550,52 +579,60 @@ pub struct Values<'a, K: 'a, V: 'a> {
     iter: Iter<'a, K, V>,
 }
 
-macro_rules! impl_iter {($typ:ty, $item:ty, $map:expr) => {
-    impl<'a, K, V> Iterator for $typ {
-        type Item = $item;
+macro_rules! impl_iter {
+    ($typ:ty, $item:ty, $map:expr) => {
+        impl<'a, K, V> Iterator for $typ {
+            type Item = $item;
 
-        fn next(&mut self) -> Option<Self::Item> {
-            self.iter.next().map($map)
+            fn next(&mut self) -> Option<Self::Item> {
+                self.iter.next().map($map)
+            }
+
+            fn size_hint(&self) -> (usize, Option<usize>) {
+                self.iter.size_hint()
+            }
         }
 
-        fn size_hint(&self) -> (usize, Option<usize>) {
-            self.iter.size_hint()
+        impl<'a, K, V> DoubleEndedIterator for $typ {
+            fn next_back(&mut self) -> Option<Self::Item> {
+                self.iter.next_back().map($map)
+            }
         }
-    }
 
-    impl<'a, K, V> DoubleEndedIterator for $typ {
-        fn next_back(&mut self) -> Option<Self::Item> {
-            self.iter.next_back().map($map)
+        impl<'a, K, V> ExactSizeIterator for $typ {
+            fn len(&self) -> usize {
+                self.iter.len()
+            }
         }
-    }
-
-    impl<'a, K, V> ExactSizeIterator for $typ {
-        fn len(&self) -> usize {
-            self.iter.len()
-        }
-    }
-}}
-impl_iter!{Drain<'a,K,V>,  (K,V),  |e| e }
-impl_iter!{Iter<'a,K,V>,  (&'a K, &'a V),  |e| (&e.0, &e.1) }
-impl_iter!{IterMut<'a,K,V>,  (&'a K, &'a mut V),  |e| (&e.0, &mut e.1) }
-impl_iter!{Keys<'a,K,V>,  &'a K,  |e| e.0 }
-impl_iter!{Values<'a,K,V>,  &'a V,  |e| e.1 }
+    };
+}
+impl_iter! {Drain<'a,K,V>,  (K,V),  |e| e }
+impl_iter! {Iter<'a,K,V>,  (&'a K, &'a V),  |e| (&e.0, &e.1) }
+impl_iter! {IterMut<'a,K,V>,  (&'a K, &'a mut V),  |e| (&e.0, &mut e.1) }
+impl_iter! {Keys<'a,K,V>,  &'a K,  |e| e.0 }
+impl_iter! {Values<'a,K,V>,  &'a V,  |e| e.1 }
 
 impl<'a, K, V> Clone for Iter<'a, K, V> {
     fn clone(&self) -> Self {
-        Iter { iter: self.iter.clone() }
+        Iter {
+            iter: self.iter.clone(),
+        }
     }
 }
 
 impl<'a, K, V> Clone for Keys<'a, K, V> {
     fn clone(&self) -> Self {
-        Keys { iter: self.iter.clone() }
+        Keys {
+            iter: self.iter.clone(),
+        }
     }
 }
 
 impl<'a, K, V> Clone for Values<'a, K, V> {
     fn clone(&self) -> Self {
-        Values { iter: self.iter.clone() }
+        Values {
+            iter: self.iter.clone(),
+        }
     }
 }
 
@@ -604,7 +641,9 @@ impl<K: Eq, V> IntoIterator for LinearMap<K, V> {
     type IntoIter = IntoIter<K, V>;
 
     fn into_iter(self) -> IntoIter<K, V> {
-        IntoIter { iter: self.storage.into_iter() }
+        IntoIter {
+            iter: self.storage.into_iter(),
+        }
     }
 }
 
@@ -628,13 +667,23 @@ impl<'a, K: Eq, V> IntoIterator for &'a mut LinearMap<K, V> {
 
 #[allow(dead_code)]
 fn assert_covariance() {
-    fn a<'a, K, V>(x: LinearMap<&'static K, &'static V>) -> LinearMap<&'a K, &'a V> { x }
+    fn a<'a, K, V>(x: LinearMap<&'static K, &'static V>) -> LinearMap<&'a K, &'a V> {
+        x
+    }
 
-    fn b<'a, K, V>(x: IntoIter<&'static K, &'static V>) -> IntoIter<&'a K, &'a V> { x }
+    fn b<'a, K, V>(x: IntoIter<&'static K, &'static V>) -> IntoIter<&'a K, &'a V> {
+        x
+    }
 
-    fn c<'i, 'a, K, V>(x: Iter<'i, &'static K, &'static V>) -> Iter<'i, &'a K, &'a V> { x }
+    fn c<'i, 'a, K, V>(x: Iter<'i, &'static K, &'static V>) -> Iter<'i, &'a K, &'a V> {
+        x
+    }
 
-    fn d<'i, 'a, K, V>(x: Keys<'i, &'static K, &'static V>) -> Keys<'i, &'a K, &'a V> { x }
+    fn d<'i, 'a, K, V>(x: Keys<'i, &'static K, &'static V>) -> Keys<'i, &'a K, &'a V> {
+        x
+    }
 
-    fn e<'i, 'a, K, V>(x: Values<'i, &'static K, &'static V>) -> Values<'i, &'a K, &'a V> { x }
+    fn e<'i, 'a, K, V>(x: Values<'i, &'static K, &'static V>) -> Values<'i, &'a K, &'a V> {
+        x
+    }
 }

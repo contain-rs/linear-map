@@ -5,9 +5,9 @@
 use std::borrow::Borrow;
 use std::fmt;
 use std::iter::{Chain, FromIterator};
-use std::ops::{BitOr, BitAnd, BitXor, Sub};
+use std::ops::{BitAnd, BitOr, BitXor, Sub};
 
-use super::{LinearMap, Keys};
+use super::{Keys, LinearMap};
 
 /// An implementation of a set using the underlying representation of a
 /// LinearMap where the value is ().
@@ -67,7 +67,7 @@ use super::{LinearMap, Keys};
 /// ```
 #[derive(Clone)]
 pub struct LinearSet<T> {
-    map: LinearMap<T, ()>
+    map: LinearMap<T, ()>,
 }
 
 impl<T: Eq> LinearSet<T> {
@@ -82,7 +82,9 @@ impl<T: Eq> LinearSet<T> {
     #[inline]
 
     pub fn new() -> LinearSet<T> {
-        LinearSet { map: LinearMap::new() }
+        LinearSet {
+            map: LinearMap::new(),
+        }
     }
 
     /// Creates an empty LinearSet with space for at least `n` elements in
@@ -96,12 +98,15 @@ impl<T: Eq> LinearSet<T> {
     /// ```
     #[inline]
     pub fn with_capacity(capacity: usize) -> LinearSet<T> {
-        LinearSet { map: LinearMap::with_capacity(capacity) }
+        LinearSet {
+            map: LinearMap::with_capacity(capacity),
+        }
     }
 }
 
 impl<T> LinearSet<T>
-    where T: Eq
+where
+    T: Eq,
 {
     /// Returns the number of elements the set can hold without reallocating.
     ///
@@ -177,7 +182,9 @@ impl<T> LinearSet<T>
     /// ```
 
     pub fn iter(&self) -> Iter<T> {
-        Iter { iter: self.map.keys() }
+        Iter {
+            iter: self.map.keys(),
+        }
     }
 
     /// Visit the values representing the difference.
@@ -231,9 +238,13 @@ impl<T> LinearSet<T>
     /// assert_eq!(diff1, [1, 4].iter().cloned().collect());
     /// ```
 
-    pub fn symmetric_difference<'a>(&'a self, other: &'a LinearSet<T>)
-        -> SymmetricDifference<'a, T> {
-        SymmetricDifference { iter: self.difference(other).chain(other.difference(self)) }
+    pub fn symmetric_difference<'a>(
+        &'a self,
+        other: &'a LinearSet<T>,
+    ) -> SymmetricDifference<'a, T> {
+        SymmetricDifference {
+            iter: self.difference(other).chain(other.difference(self)),
+        }
     }
 
     /// Visit the values representing the intersection.
@@ -280,7 +291,9 @@ impl<T> LinearSet<T>
     /// ```
 
     pub fn union<'a>(&'a self, other: &'a LinearSet<T>) -> Union<'a, T> {
-        Union { iter: self.iter().chain(other.difference(self)) }
+        Union {
+            iter: self.iter().chain(other.difference(self)),
+        }
     }
 
     /// Returns the number of elements in the set.
@@ -296,7 +309,9 @@ impl<T> LinearSet<T>
     /// assert_eq!(v.len(), 1);
     /// ```
 
-    pub fn len(&self) -> usize { self.map.len() }
+    pub fn len(&self) -> usize {
+        self.map.len()
+    }
 
     /// Returns true if the set contains no elements.
     ///
@@ -311,12 +326,16 @@ impl<T> LinearSet<T>
     /// assert!(!v.is_empty());
     /// ```
 
-    pub fn is_empty(&self) -> bool { self.map.is_empty() }
+    pub fn is_empty(&self) -> bool {
+        self.map.is_empty()
+    }
 
     /// Clears the set, returning all elements in an iterator.
     #[inline]
     pub fn drain(&mut self) -> Drain<T> {
-        Drain { iter: self.map.drain() }
+        Drain {
+            iter: self.map.drain(),
+        }
     }
 
     /// Clears the set, removing all values.
@@ -331,14 +350,18 @@ impl<T> LinearSet<T>
     /// v.clear();
     /// assert!(v.is_empty());
     /// ```
-    pub fn clear(&mut self) { self.map.clear() }
+    pub fn clear(&mut self) {
+        self.map.clear()
+    }
 
     /// Retains only the elements specified by the predicate.
     ///
     /// In other words, remove all elements `e` such that `f(&e)` returns `false`.
     ///
     pub fn retain<F>(&mut self, mut f: F)
-    where F: FnMut(&T) -> bool {
+    where
+        F: FnMut(&T) -> bool,
+    {
         self.map.retain(|k, _| f(k));
     }
 
@@ -358,7 +381,9 @@ impl<T> LinearSet<T>
     /// assert_eq!(set.contains(&4), false);
     /// ```
     pub fn contains<Q: ?Sized>(&self, value: &Q) -> bool
-        where T: Borrow<Q>, Q: Eq
+    where
+        T: Borrow<Q>,
+        Q: Eq,
     {
         self.map.contains_key(value)
     }
@@ -449,7 +474,9 @@ impl<T> LinearSet<T>
     /// assert_eq!(set.len(), 1);
     /// ```
 
-    pub fn insert(&mut self, value: T) -> bool { self.map.insert(value, ()).is_none() }
+    pub fn insert(&mut self, value: T) -> bool {
+        self.map.insert(value, ()).is_none()
+    }
 
     /// Removes a value from the set. Returns `true` if the value was
     /// present in the set.
@@ -471,29 +498,32 @@ impl<T> LinearSet<T>
     /// ```
 
     pub fn remove<Q: ?Sized>(&mut self, value: &Q) -> bool
-        where T: Borrow<Q>, Q: Eq
+    where
+        T: Borrow<Q>,
+        Q: Eq,
     {
         self.map.remove(value).is_some()
     }
-
 }
 
 impl<T> PartialEq for LinearSet<T>
-    where T: Eq
+where
+    T: Eq,
 {
     fn eq(&self, other: &LinearSet<T>) -> bool {
-        if self.len() != other.len() { return false; }
+        if self.len() != other.len() {
+            return false;
+        }
 
         self.iter().all(|key| other.contains(key))
     }
 }
 
-impl<T> Eq for LinearSet<T>
-    where T: Eq
-{}
+impl<T> Eq for LinearSet<T> where T: Eq {}
 
 impl<T> fmt::Debug for LinearSet<T>
-    where T: Eq + fmt::Debug
+where
+    T: Eq + fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_set().entries(self.iter()).finish()
@@ -501,9 +531,10 @@ impl<T> fmt::Debug for LinearSet<T>
 }
 
 impl<T> FromIterator<T> for LinearSet<T>
-    where T: Eq
+where
+    T: Eq,
 {
-    fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> LinearSet<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> LinearSet<T> {
         let iterator = iter.into_iter();
         let lower = iterator.size_hint().0;
         let mut set = LinearSet::with_capacity(lower);
@@ -513,9 +544,10 @@ impl<T> FromIterator<T> for LinearSet<T>
 }
 
 impl<T> Extend<T> for LinearSet<T>
-    where T: Eq
+where
+    T: Eq,
 {
-    fn extend<I: IntoIterator<Item=T>>(&mut self, iter: I) {
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         for k in iter {
             self.insert(k);
         }
@@ -523,15 +555,17 @@ impl<T> Extend<T> for LinearSet<T>
 }
 
 impl<'a, T> Extend<&'a T> for LinearSet<T>
-    where T: 'a + Eq + Copy
+where
+    T: 'a + Eq + Copy,
 {
-    fn extend<I: IntoIterator<Item=&'a T>>(&mut self, iter: I) {
+    fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iter: I) {
         self.extend(iter.into_iter().cloned());
     }
 }
 
 impl<T> Default for LinearSet<T>
-    where T: Eq
+where
+    T: Eq,
 {
     fn default() -> LinearSet<T> {
         LinearSet::new()
@@ -548,7 +582,8 @@ impl<K: Eq> Into<Vec<K>> for LinearSet<K> {
 }
 
 impl<'a, 'b, T> BitOr<&'b LinearSet<T>> for &'a LinearSet<T>
-    where T: Eq + Clone
+where
+    T: Eq + Clone,
 {
     type Output = LinearSet<T>;
 
@@ -578,7 +613,8 @@ impl<'a, 'b, T> BitOr<&'b LinearSet<T>> for &'a LinearSet<T>
 }
 
 impl<'a, 'b, T> BitAnd<&'b LinearSet<T>> for &'a LinearSet<T>
-    where T: Eq + Clone
+where
+    T: Eq + Clone,
 {
     type Output = LinearSet<T>;
 
@@ -608,7 +644,8 @@ impl<'a, 'b, T> BitAnd<&'b LinearSet<T>> for &'a LinearSet<T>
 }
 
 impl<'a, 'b, T> BitXor<&'b LinearSet<T>> for &'a LinearSet<T>
-    where T: Eq + Clone
+where
+    T: Eq + Clone,
 {
     type Output = LinearSet<T>;
 
@@ -638,7 +675,8 @@ impl<'a, 'b, T> BitXor<&'b LinearSet<T>> for &'a LinearSet<T>
 }
 
 impl<'a, 'b, T> Sub<&'b LinearSet<T>> for &'a LinearSet<T>
-    where T: Eq + Clone
+where
+    T: Eq + Clone,
 {
     type Output = LinearSet<T>;
 
@@ -669,12 +707,12 @@ impl<'a, 'b, T> Sub<&'b LinearSet<T>> for &'a LinearSet<T>
 
 /// LinearSet iterator
 pub struct Iter<'a, K: 'a> {
-    iter: Keys<'a, K, ()>
+    iter: Keys<'a, K, ()>,
 }
 
 /// LinearSet move iterator
 pub struct IntoIter<K> {
-    iter: super::IntoIter<K, ()>
+    iter: super::IntoIter<K, ()>,
 }
 
 /// LinearSet drain iterator
@@ -700,16 +738,17 @@ pub struct Difference<'a, T: 'a> {
 
 /// Symmetric difference iterator.
 pub struct SymmetricDifference<'a, T: 'a> {
-    iter: Chain<Difference<'a, T>, Difference<'a, T>>
+    iter: Chain<Difference<'a, T>, Difference<'a, T>>,
 }
 
 /// Set union iterator.
 pub struct Union<'a, T: 'a> {
-    iter: Chain<Iter<'a, T>, Difference<'a, T>>
+    iter: Chain<Iter<'a, T>, Difference<'a, T>>,
 }
 
 impl<'a, T> IntoIterator for &'a LinearSet<T>
-    where T: Eq
+where
+    T: Eq,
 {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
@@ -720,7 +759,8 @@ impl<'a, T> IntoIterator for &'a LinearSet<T>
 }
 
 impl<T> IntoIterator for LinearSet<T>
-    where T: Eq
+where
+    T: Eq,
 {
     type Item = T;
     type IntoIter = IntoIter<T>;
@@ -746,51 +786,79 @@ impl<T> IntoIterator for LinearSet<T>
     /// }
     /// ```
     fn into_iter(self) -> IntoIter<T> {
-        IntoIter { iter: self.map.into_iter() }
+        IntoIter {
+            iter: self.map.into_iter(),
+        }
     }
 }
 
 impl<'a, K> Clone for Iter<'a, K> {
-    fn clone(&self) -> Iter<'a, K> { Iter { iter: self.iter.clone() } }
+    fn clone(&self) -> Iter<'a, K> {
+        Iter {
+            iter: self.iter.clone(),
+        }
+    }
 }
 impl<'a, K> Iterator for Iter<'a, K> {
     type Item = &'a K;
 
-    fn next(&mut self) -> Option<&'a K> { self.iter.next() }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+    fn next(&mut self) -> Option<&'a K> {
+        self.iter.next()
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 impl<'a, K> ExactSizeIterator for Iter<'a, K> {
-    fn len(&self) -> usize { self.iter.len() }
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
 }
 
 impl<K> Iterator for IntoIter<K> {
     type Item = K;
 
-    fn next(&mut self) -> Option<K> { self.iter.next().map(|(k, _)| k) }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+    fn next(&mut self) -> Option<K> {
+        self.iter.next().map(|(k, _)| k)
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 impl<K> ExactSizeIterator for IntoIter<K> {
-    fn len(&self) -> usize { self.iter.len() }
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
 }
 
 impl<'a, K> Iterator for Drain<'a, K> {
     type Item = K;
 
-    fn next(&mut self) -> Option<K> { self.iter.next().map(|(k, _)| k) }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+    fn next(&mut self) -> Option<K> {
+        self.iter.next().map(|(k, _)| k)
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 impl<'a, K> ExactSizeIterator for Drain<'a, K> {
-    fn len(&self) -> usize { self.iter.len() }
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
 }
 
 impl<'a, T> Clone for Intersection<'a, T> {
     fn clone(&self) -> Intersection<'a, T> {
-        Intersection { iter: self.iter.clone(), ..*self }
+        Intersection {
+            iter: self.iter.clone(),
+            ..*self
+        }
     }
 }
 
 impl<'a, T> Iterator for Intersection<'a, T>
-    where T: Eq
+where
+    T: Eq,
 {
     type Item = &'a T;
 
@@ -798,9 +866,11 @@ impl<'a, T> Iterator for Intersection<'a, T>
         loop {
             match self.iter.next() {
                 None => return None,
-                Some(elt) => if self.other.contains(elt) {
-                    return Some(elt)
-                },
+                Some(elt) => {
+                    if self.other.contains(elt) {
+                        return Some(elt);
+                    }
+                }
             }
         }
     }
@@ -813,12 +883,16 @@ impl<'a, T> Iterator for Intersection<'a, T>
 
 impl<'a, T> Clone for Difference<'a, T> {
     fn clone(&self) -> Difference<'a, T> {
-        Difference { iter: self.iter.clone(), ..*self }
+        Difference {
+            iter: self.iter.clone(),
+            ..*self
+        }
     }
 }
 
 impl<'a, T> Iterator for Difference<'a, T>
-    where T: Eq
+where
+    T: Eq,
 {
     type Item = &'a T;
 
@@ -826,9 +900,11 @@ impl<'a, T> Iterator for Difference<'a, T>
         loop {
             match self.iter.next() {
                 None => return None,
-                Some(elt) => if !self.other.contains(elt) {
-                    return Some(elt)
-                },
+                Some(elt) => {
+                    if !self.other.contains(elt) {
+                        return Some(elt);
+                    }
+                }
             }
         }
     }
@@ -841,43 +917,71 @@ impl<'a, T> Iterator for Difference<'a, T>
 
 impl<'a, T> Clone for SymmetricDifference<'a, T> {
     fn clone(&self) -> SymmetricDifference<'a, T> {
-        SymmetricDifference { iter: self.iter.clone() }
+        SymmetricDifference {
+            iter: self.iter.clone(),
+        }
     }
 }
 
 impl<'a, T> Iterator for SymmetricDifference<'a, T>
-    where T: Eq
+where
+    T: Eq,
 {
     type Item = &'a T;
 
-    fn next(&mut self) -> Option<&'a T> { self.iter.next() }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+    fn next(&mut self) -> Option<&'a T> {
+        self.iter.next()
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 
 impl<'a, T> Clone for Union<'a, T> {
-    fn clone(&self) -> Union<'a, T> { Union { iter: self.iter.clone() } }
+    fn clone(&self) -> Union<'a, T> {
+        Union {
+            iter: self.iter.clone(),
+        }
+    }
 }
 
 impl<'a, T> Iterator for Union<'a, T>
-    where T: Eq
+where
+    T: Eq,
 {
     type Item = &'a T;
 
-    fn next(&mut self) -> Option<&'a T> { self.iter.next() }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+    fn next(&mut self) -> Option<&'a T> {
+        self.iter.next()
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 
 #[allow(dead_code)]
 fn assert_covariance() {
-    fn set<'new>(v: LinearSet<&'static str>) -> LinearSet<&'new str> { v }
-    fn iter<'a, 'new>(v: Iter<'a, &'static str>) -> Iter<'a, &'new str> { v }
-    fn into_iter<'new>(v: IntoIter<&'static str>) -> IntoIter<&'new str> { v }
-    fn difference<'a, 'new>(v: Difference<'a, &'static str>)
-        -> Difference<'a, &'new str> { v }
-    fn symmetric_difference<'a, 'new>(v: SymmetricDifference<'a, &'static str>)
-        -> SymmetricDifference<'a, &'new str> { v }
-    fn intersection<'a, 'new>(v: Intersection<'a, &'static str>)
-        -> Intersection<'a, &'new str> { v }
-    fn union<'a, 'new>(v: Union<'a, &'static str>)
-        -> Union<'a, &'new str> { v }
+    fn set<'new>(v: LinearSet<&'static str>) -> LinearSet<&'new str> {
+        v
+    }
+    fn iter<'a, 'new>(v: Iter<'a, &'static str>) -> Iter<'a, &'new str> {
+        v
+    }
+    fn into_iter<'new>(v: IntoIter<&'static str>) -> IntoIter<&'new str> {
+        v
+    }
+    fn difference<'a, 'new>(v: Difference<'a, &'static str>) -> Difference<'a, &'new str> {
+        v
+    }
+    fn symmetric_difference<'a, 'new>(
+        v: SymmetricDifference<'a, &'static str>,
+    ) -> SymmetricDifference<'a, &'new str> {
+        v
+    }
+    fn intersection<'a, 'new>(v: Intersection<'a, &'static str>) -> Intersection<'a, &'new str> {
+        v
+    }
+    fn union<'a, 'new>(v: Union<'a, &'static str>) -> Union<'a, &'new str> {
+        v
+    }
 }

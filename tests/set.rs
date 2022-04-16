@@ -267,7 +267,9 @@ fn test_drain() {
             assert_eq!(last_i, 49);
         }
 
-        for _ in &s { panic!("s should be empty!"); }
+        for _ in &s {
+            panic!("s should be empty!");
+        }
 
         // reset to try again.
         s.extend(1..100);
@@ -315,7 +317,7 @@ fn test_into_vec() {
 
 #[test]
 fn test_retain() {
-    let xs = [1,2,3,4,5,6];
+    let xs = [1, 2, 3, 4, 5, 6];
     let mut set: LinearSet<isize> = xs.iter().cloned().collect();
     set.retain(|&k| k % 2 == 0);
     assert_eq!(set.len(), 3);
