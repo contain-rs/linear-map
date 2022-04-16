@@ -305,14 +305,8 @@ impl<K: Eq, V> LinearMap<K, V> {
     /// Returns the given key's corresponding entry in the map for in-place manipulation.
     pub fn entry(&mut self, key: K) -> Entry<K, V> {
         match self.storage.iter().position(|&(ref k, _)| key == *k) {
-            None => Vacant(VacantEntry {
-                map: self,
-                key: key,
-            }),
-            Some(index) => Occupied(OccupiedEntry {
-                map: self,
-                index: index,
-            }),
+            None => Vacant(VacantEntry { map: self, key }),
+            Some(index) => Occupied(OccupiedEntry { map: self, index }),
         }
     }
 }
@@ -383,9 +377,15 @@ impl<K: Eq, V: PartialEq> PartialEq for LinearMap<K, V> {
 
 impl<K: Eq, V: Eq> Eq for LinearMap<K, V> {}
 
-impl<K: Eq, V> Into<Vec<(K, V)>> for LinearMap<K, V> {
-    fn into(self) -> Vec<(K, V)> {
-        self.storage
+impl<K: Eq, V> From<LinearMap<K, V>> for Vec<(K, V)> {
+    fn from(other: LinearMap<K, V>) -> Self {
+        other.storage
+    }
+}
+
+impl<K: Eq, V> From<Vec<(K, V)>> for LinearMap<K, V> {
+    fn from(other: Vec<(K, V)>) -> Self {
+        Self { storage: other }
     }
 }
 

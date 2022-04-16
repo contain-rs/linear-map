@@ -213,7 +213,7 @@ where
     pub fn difference<'a>(&'a self, other: &'a LinearSet<T>) -> Difference<'a, T> {
         Difference {
             iter: self.iter(),
-            other: other,
+            other,
         }
     }
 
@@ -268,7 +268,7 @@ where
     pub fn intersection<'a>(&'a self, other: &'a LinearSet<T>) -> Intersection<'a, T> {
         Intersection {
             iter: self.iter(),
-            other: other,
+            other,
         }
     }
 
@@ -572,12 +572,15 @@ where
     }
 }
 
-impl<K: Eq> Into<Vec<K>> for LinearSet<K> {
-    fn into(self) -> Vec<K> {
-        unsafe {
-            use std::mem;
-            mem::transmute(self)
-        }
+impl<K: Eq> From<LinearSet<K>> for Vec<K> {
+    fn from(other: LinearSet<K>) -> Self {
+        unsafe { std::mem::transmute(other) }
+    }
+}
+
+impl<K: Eq> From<Vec<K>> for LinearSet<K> {
+    fn from(other: Vec<K>) -> Self {
+        unsafe { std::mem::transmute(other) }
     }
 }
 
