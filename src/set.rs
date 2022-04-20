@@ -2,10 +2,11 @@
 //!
 //! See the [`LinearSet`](struct.LinearSet.html) type for details.
 
-use std::borrow::Borrow;
-use std::fmt;
-use std::iter::{Chain, FromIterator};
-use std::ops::{BitAnd, BitOr, BitXor, Sub};
+use alloc::vec::Vec;
+use core::borrow::Borrow;
+use core::fmt;
+use core::iter::{Chain, FromIterator};
+use core::ops::{BitAnd, BitOr, BitXor, Sub};
 
 use super::{Keys, LinearMap};
 
@@ -574,13 +575,13 @@ where
 
 impl<K: Eq> From<LinearSet<K>> for Vec<K> {
     fn from(other: LinearSet<K>) -> Self {
-        unsafe { std::mem::transmute(other) }
+        unsafe { core::mem::transmute(other) }
     }
 }
 
 impl<K: Eq> From<Vec<K>> for LinearSet<K> {
     fn from(other: Vec<K>) -> Self {
-        unsafe { std::mem::transmute(other) }
+        unsafe { core::mem::transmute(other) }
     }
 }
 

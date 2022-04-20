@@ -16,8 +16,8 @@ use self::serde::de::{Error, MapAccess, SeqAccess, Visitor};
 use self::serde::ser::{SerializeMap, SerializeSeq};
 use self::serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use std::fmt;
-use std::marker::PhantomData;
+use core::fmt;
+use core::marker::PhantomData;
 
 impl<K, V> Serialize for LinearMap<K, V>
 where

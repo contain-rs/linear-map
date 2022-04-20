@@ -2,20 +2,23 @@
 //!
 //! See the [`LinearMap`](struct.LinearMap.html) type for details.
 
+#![no_std]
 #![deny(missing_docs)]
+
+extern crate alloc;
 
 // Optional Serde support
 #[cfg(feature = "serde_impl")]
 pub mod serde;
 pub mod set;
 
-use std::borrow::Borrow;
-use std::fmt::{self, Debug};
-use std::iter;
-use std::mem;
-use std::ops;
-use std::slice;
-use std::vec;
+use alloc::vec::{self, Vec};
+use core::borrow::Borrow;
+use core::fmt::{self, Debug};
+use core::iter;
+use core::mem;
+use core::ops;
+use core::slice;
 
 use self::Entry::{Occupied, Vacant};
 
@@ -79,7 +82,9 @@ pub struct LinearMap<K, V> {
 impl<K: Eq, V> LinearMap<K, V> {
     /// Creates an empty map. This method does not allocate.
     pub fn new() -> Self {
-        LinearMap { storage: vec![] }
+        LinearMap {
+            storage: Vec::new(),
+        }
     }
 
     /// Creates an empty map with the given initial capacity.
