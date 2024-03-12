@@ -202,6 +202,13 @@ impl<K: Eq, V> LinearMap<K, V> {
         }
     }
 
+    /// Returns a a slice viewing the map's keys and references in arbitrary order.
+    ///
+    /// The item type is `(K, V)`.
+    pub fn as_slice(&self) -> &[(K, V)] {
+        &self.storage
+    }
+
     /// Returns an iterator yielding references to the map's keys in arbitrary order.
     ///
     /// The iterator's item type is `&K`.

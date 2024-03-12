@@ -1,6 +1,6 @@
 [package]
 name = "linear-map"
-version = "1.2.0"
+version = "1.2.1"
 license = "MIT/Apache-2.0"
 description = "A map implemented by searching linearly in a vector."
 authors = [

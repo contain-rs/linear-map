@@ -266,6 +266,21 @@ fn test_macro() {
 }
 
 #[test]
+fn test_as_slice() {
+    use linear_map::set::LinearSet;
+    let names = linear_map! {
+        1 => "one",
+        2 => "two",
+    };
+    let slice = names.as_slice();
+    assert_eq!(slice, &[(1, "one"), (2, "two")]);
+    let names: LinearSet<&'static str> = names.into_iter().map(|x| x.1).collect::<LinearSet<_>>();
+    // LinearSet have (T, ()) as items as an implementation detail.
+    let slice = names.as_slice();
+    assert_eq!(slice, &[("one", ()), ("two", ())]);
+}
+
+#[test]
 fn test_retain() {
     let mut map: LinearMap<isize, isize> = (0..100).map(|x| (x, x * 10)).collect();
     map.retain(|&k, _| k % 2 == 0);

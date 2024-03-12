@@ -504,6 +504,13 @@ where
     {
         self.map.remove(value).is_some()
     }
+
+    /// Returns a a slice viewing the sets values in arbitrary order.
+    ///
+    /// The item type is `(T, ())`.
+    pub fn as_slice(&self) -> &[(T, ())] {
+        &self.map.storage
+    }
 }
 
 impl<T> PartialEq for LinearSet<T>
